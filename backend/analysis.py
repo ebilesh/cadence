@@ -67,43 +67,57 @@ def read_score(path: Path) -> dict:
 
 
 def polyphony_ratio(
-    spectrum: np.ndarray, frequencies: np.ndarray, f0: np.ndarray
+    spectrum: np.ndarray, frequencies: np.ndarray, f0: np.ndarray,
+    active: np.ndarray | None = None,
 ) -> float:
-    # A second strong peak outside the tracked pitch's harmonics suggests a chord.
+    # Check stable attacks, not the previous note ringing under the next one.
     flagged = checked = 0
     for frame in range(0, min(spectrum.shape[1], len(f0)), 3):
+        if (active is not None and not active[frame]) or not np.isfinite(f0[frame]):
+            continue
         column = spectrum[:, frame]
-        if np.max(column) < 1e-6:
+        maximum = float(np.max(column))
+        if maximum < 1e-6:
             continue
-        peaks = (
-            np.flatnonzero((column[1:-1] > column[:-2]) & (column[1:-1] > column[2:]))
-            + 1
-        )
-        peaks = peaks[
-            (frequencies[peaks] > 45) & (column[peaks] > np.max(column) * 0.24)
-        ]
-        if len(peaks) < 2:
-            checked += 1
-            continue
-        fundamental = (
-            f0[frame]
-            if np.isfinite(f0[frame])
-            else frequencies[peaks[np.argmax(column[peaks])]]
-        )
-        if fundamental <= 0:
-            continue
-        ratios = frequencies[peaks] / fundamental
-        harmonic = np.abs(ratios - np.maximum(1, np.round(ratios))) < 0.065
+        peaks = np.flatnonzero((column[1:-1] > column[:-2]) &
+                              (column[1:-1] > column[2:])) + 1
+        peaks = peaks[(frequencies[peaks] > 45) & (column[peaks] > maximum * 0.35)]
+        fundamental = f0[frame]
+        harmonic_number = np.maximum(1, np.round(frequencies[peaks] / fundamental))
+        target = fundamental * harmonic_number
+        tolerance = np.maximum(frequencies[1] - frequencies[0], target * 0.035)
+        harmonic = np.abs(frequencies[peaks] - target) <= tolerance
+        bins = np.abs(frequencies - fundamental) < max(8.0, fundamental * 0.04)
+        strength = float(np.max(column[bins])) if bins.any() else 0.0
         checked += 1
-        fundamental_bins = np.abs(frequencies - fundamental) < max(
-            8.0, fundamental * 0.04
-        )
-        fundamental_strength = (
-            float(np.max(column[fundamental_bins])) if fundamental_bins.any() else 0.0
-        )
-        if np.any(~harmonic) or fundamental_strength < np.max(column) * 0.1:
+        if np.count_nonzero(~harmonic) >= 2 or (len(peaks) >= 3 and strength < maximum * 0.08):
             flagged += 1
     return flagged / max(checked, 1)
+
+
+def filter_audio_events(events: list[Note], y: np.ndarray, sr: int) -> list[Note]:
+    import librosa
+
+    rms = librosa.feature.rms(y=y, frame_length=1024, hop_length=256)[0]
+    times = librosa.times_like(rms, sr=sr, hop_length=256)
+    floor = float(np.max(rms)) * 0.03
+    kept = []
+    for note in events:
+        start = note["start"]
+        attack = rms[(times >= start) & (times < start + 0.09)]
+        prior = rms[(times >= max(0, start - 0.08)) & (times < start)]
+        peak = float(np.max(attack)) if len(attack) else 0.0
+        previous = float(np.median(prior)) if len(prior) else 0.0
+        if kept and note["pitch"] == kept[-1]["pitch"] and start - kept[-1]["start"] <= 0.15:
+            kept[-1]["duration"] = max(kept[-1]["duration"], start + note["duration"] - kept[-1]["start"])
+            continue
+        # A new attack needs a small energy rise. Decay alone should not add a note.
+        if note["duration"] < 0.06 or peak < floor or peak < previous * 1.15:
+            continue
+        kept.append(dict(note))
+    for current, following in zip(kept, kept[1:]):
+        current["duration"] = following["start"] - current["start"]
+    return kept
 
 
 def read_audio(path: Path) -> dict:
@@ -149,15 +163,20 @@ def read_audio(path: Path) -> dict:
                     confidence=round(float(np.median(prob[mask])), 3),
                 )
             )
+    events = filter_audio_events(events, y, sr)
     spectrum = np.abs(librosa.stft(y, n_fft=4096, hop_length=hop))
-    ratio = polyphony_ratio(spectrum, librosa.fft_frequencies(sr=sr, n_fft=4096), f0)
+    attacks = np.zeros(len(f0), dtype=bool)
+    for note in events:
+        attacks |= (times >= note["start"] + 0.04) & (times < note["start"] + 0.18)
+    ratio = polyphony_ratio(spectrum, librosa.fft_frequencies(sr=sr, n_fft=4096), f0,
+                            attacks & (prob >= 0.5))
     warnings = [
         "Audio results are estimates. Use MIDI for chords or check these notes by ear."
     ]
-    limited = ratio >= 0.25
+    limited = ratio >= 0.5
     if limited:
         warnings.append(
-            "This recording may contain overlapping notes or strong reverb. Scores are hidden because single-pitch tracking is unreliable here. Try a single-note passage or MIDI."
+            "This recording may contain overlapping notes. Scores are hidden by default and may be unreliable. Try a single-note passage or MIDI, or choose Show scores anyway."
         )
     if events and np.mean([n["confidence"] for n in events]) < 0.6:
         warnings.append(
@@ -248,6 +267,19 @@ def fit_tempo(
     return coefficients if 0.25 < slope < 4 else None
 
 
+def estimate_octave_shift(r: list[Note], p: list[Note], rt: np.ndarray, pt: np.ndarray) -> int:
+    costs = []
+    for shift in [-24, -12, 0, 12, 24]:
+        shifted = [dict(note, pitch=note["pitch"] - shift) for note in p]
+        pairs, missing, extra = align(r, shifted, rt, pt)
+        cost = 1.2 * (len(missing) + len(extra)) + sum(
+            min(abs(r[i]["pitch"] - shifted[j]["pitch"]) * 0.65, 1.5)
+            + min(abs(rt[i] - pt[j]) / 0.3, 2) for i, j in pairs
+        )
+        costs.append((cost, abs(shift), shift))
+    return min(costs)[2]
+
+
 def analyze(
     reference: list[Note],
     performance: list[Note],
@@ -274,6 +306,9 @@ def analyze(
     raw = np.array([n["start"] for n in p])
     scale = max(rt[-1] - rt[0], 0.1) / max(raw[-1] - raw[0], 0.1)
     coefficients = np.array([scale, rt[0] - scale * raw[0]])
+    original_p = p
+    octave_shift = estimate_octave_shift(r, p, rt, np.polyval(coefficients, raw))
+    p = [dict(note, pitch=note["pitch"] - octave_shift) for note in p]
     for _ in range(3):
         pt = np.polyval(coefficients, raw)
         pairs, missing, extra = align(r, p, rt, pt)
@@ -322,6 +357,7 @@ def analyze(
                 played_time=round(float(pt[j]), 4),
                 played_duration=round(p[j]["duration"] * scale, 4),
                 raw_played_time=p[j]["start"],
+                raw_played_pitch=original_p[j]["pitch"],
                 confidence=confidence,
                 error_ms=round(error),
                 status=status,
@@ -341,6 +377,7 @@ def analyze(
                 played_time=None,
                 played_duration=None,
                 raw_played_time=None,
+                raw_played_pitch=None,
                 confidence=None,
                 error_ms=None,
                 status="missed",
@@ -350,13 +387,25 @@ def analyze(
             )
         )
     rows.sort(key=lambda n: n["index"])
+    def extra_measure(time: float) -> int:
+        spans = []
+        for bar in measures:
+            notes = [n for n in r if measure_at(n["start"]) == bar["number"]]
+            if notes:
+                start = min(n["start"] for n in notes)
+                end = min(bar["end"], max(n["start"] + n["duration"] for n in notes))
+                spans.append((max(start - time, time - end, 0),
+                              0 if start <= time < end else 1, bar["number"]))
+        return min(spans)[2] if spans else measure_at(time)
+
     extras = [
         dict(
             time=round(float(pt[j]), 4),
             duration=p[j]["duration"] * scale,
             pitch=p[j]["pitch"],
             confidence=p[j].get("confidence", 1),
-            measure=measure_at(float(pt[j])),
+            raw_pitch=original_p[j]["pitch"],
+            measure=extra_measure(float(pt[j])),
         )
         for j in extra
     ]
@@ -404,12 +453,18 @@ def analyze(
     info = audio_info or {}
     limited = info.get("assessment_limited", False)
     warnings = list(info.get("warnings", []))
+    if octave_shift:
+        amount = "one octave" if abs(octave_shift) == 12 else "two octaves"
+        direction = "low" if octave_shift < 0 else "high"
+        warnings.append(f"Your notes look {amount} {direction}. Pitch matching uses an octave adjustment of {-octave_shift:+d} semitones. The note table keeps the original pitches.")
     if meter_assumed:
         warnings.append(
             "The MIDI has no time signature. Bar numbers assume 4/4 from the file start; pickups may be numbered differently."
         )
     local_slope = float(np.polyval(np.polyder(coefficients), np.median(raw)))
     return dict(
+        octave_shift=octave_shift,
+        score_estimates=dict(score=round(0.55 * pitch + 0.45 * timing), pitch_score=pitch, timing_score=timing),
         score=None if limited else round(0.55 * pitch + 0.45 * timing),
         pitch_score=None if limited else pitch,
         timing_score=None if limited else timing,

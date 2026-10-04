@@ -11,3 +11,6 @@ __pycache__/
 *.pyc
 .DS_Store
 *.log
+
+# Phone recordings stay local.
+samples/real/

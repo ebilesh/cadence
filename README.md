@@ -53,7 +53,7 @@ Open **http://127.0.0.1:5173**. The frontend forwards `/api` requests to Python 
 
 **MIDI files:** choose `samples/reference.mid` and `samples/performance.mid`, then click Analyze performance. For my own music, I use two files covering the same passage. MIDI gives exact recorded pitch and note-on times. Chords are supported, but dense simultaneous notes can still make alignment ambiguous.
 
-**Audio files:** choose the reference MIDI and `samples/performance.wav`. WAV, FLAC, and OGG are accepted. Audio results are estimates and work best on single-note passages in a quiet room. The tracker returns one pitch per attack. Chords, reverb, and pedal can confuse it. If the spectral check suggests overlapping sounds, the app warns me and hides the scores. `samples/chords.wav` is a short test of that warning.
+**Audio files:** choose the reference MIDI and `samples/performance.wav`. WAV, FLAC, and OGG are accepted. Audio results are estimates and work best on single-note passages in a quiet room. The tracker returns one pitch per attack. Chords, reverb, and pedal can confuse it. If the spectral check suggests overlapping sounds, scores and error counts are hidden by default. Show scores anyway reveals estimates labeled may be unreliable. `samples/chords.wav` is a short test of that warning.
 
 **Microphone:** select Audio and click Record microphone. Allow the browser permission, play the passage, then stop. The browser saves mono PCM WAV before uploading it. Recording stops after 119 seconds. A pending permission request times out with a message. I tested the recording code with a generated audio stream, not a physical piano recording.
 
@@ -74,9 +74,30 @@ The report counts **wrong pitches**, **missed notes**, and **extra notes** separ
 - **Timing score:** each matched note gets `exp(-abs(offset_ms) / 150)`, weighted by confidence. I divide the sum by matched weight plus missed-note count, then multiply by 100. Missing notes contribute zero. Extra notes affect pitch score, not timing score.
 - **Overall score:** 55% pitch score and 45% timing score. These weights are choices I made for practice feedback, not a validated proficiency scale.
 
-Offsets beyond 80 ms are labeled early or late. Audio notes below 50% confidence are labeled uncertain and have less influence. Suspected polyphonic audio gets no numeric score. Counts still appear as estimates so I can inspect the detected events.
+Offsets beyond 80 ms are labeled early or late. Audio notes below 50% confidence are labeled uncertain and have less influence. Suspected polyphonic audio withholds scores and counts until I click Show scores anyway. The estimates keep an unreliable label.
 
 Bar boundaries come from the reference MIDI's tempo map and time signature. If the file omits a time signature, I assume 4/4 and show a warning. A pickup may be numbered differently from the printed score.
+
+## Octaves and audio filtering
+
+Before alignment, I try take offsets of -24, -12, 0, +12, and +24 semitones. I use the offset with the lowest cost from the existing alignment function; ties prefer no shift or the smaller shift. The report says when an octave adjustment was used. The table shows original pitches alongside the pitches used for comparison. This handles a keyboard set to another octave. It can also treat a passage intentionally played in another octave as an octave mismatch.
+
+Audio detections of the same pitch within 150 ms are merged. Other detections need at least 60 ms duration, attack RMS at least 3% of the recording's peak RMS, and a 15% rise over the preceding 80 ms. The rise check removes false attacks during decay. These are general heuristics, checked on decaying synthetic tones at different pitches and volumes, separate repeated attacks, and the two real recordings.
+
+Overlap checks use confident pitch frames 40 to 180 ms after an accepted attack. They allow small deviations from exact harmonics and require strong conflicting peaks in at least half the checked frames. This avoids treating all piano sustain as a chord. It can still miss overlap or flag resonance.
+
+Extra notes go to the nearest time span occupied by reference notes in a bar, including their durations. This also handles silence around a bar boundary. The displayed extra time is still the aligned time.
+
+## Real recording check
+
+| File | Detected before / after | Extras before / after | Scores before / after |
+| --- | --- | --- | --- |
+| `samples/real/good.wav` | 40 / 32 | 8 / 0 | Hidden / shown |
+| `samples/real/messed-up.wav` | 37 / 32 | 6 / 1 | Hidden / shown |
+
+The phone recordings stay local and are not included in this repository. Their tests skip when the files are absent.
+
+The clean take has 0 missed notes and 0 wrong pitches after filtering, with an estimated score of 91. The mistaken take has 1 missed note and 0 wrong pitches, with an estimated score of 71. Its remaining extra is still an estimate. I kept the alignment and tempo-fit functions unchanged for these fixes.
 
 ## Switch the recommender
 
@@ -153,11 +174,11 @@ python tools/update_demo.py
 - `frontend/src/capture.js`: microphone WAV capture and MIDI event handling.
 - `samples/`: original MIDI and synthesized audio.
 - `demo/`: built frontend and saved Python report for the quick demo.
-- [Architecture](docs/architecture.md) and [review notes](docs/review.md): design choices, checks, and remaining limits.
+- [Architecture](docs/architecture.md) : design choices, checks, and remaining limits.
 
 ## Limits and next ideas
 
-I do not score pedal, dynamics, articulation, fingering, or expression. The audio polyphony check can miss chords or flag a noisy single-note recording. Pitch confidence is also imperfect. The current audio samples are synthesized, so they do not establish accuracy on real pianos.
+I do not score pedal, dynamics, articulation, fingering, or expression. The audio polyphony check can miss chords or flag a noisy single-note recording. Pitch confidence is also imperfect. I tested two phone recordings of a real piano as well as synthesized samples. Two recordings do not establish general accuracy on real pianos. Fast repeated notes within 150 ms can be merged, and quiet attacks can still be lost. The mistaken take still has one extra detection.
 
 I do not save uploads or session history. Files are deleted after analysis. Export a report if I want to keep it. The per-IP limiter lives in one Python process and uses the socket IP; it is not a shared limiter for several workers. Behind a proxy, users may share that address.
 

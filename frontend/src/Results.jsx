@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowUpRight, Check, Music2, RotateCcw, Sparkles } from "lucide-react";
 
 const name = (pitch) =>
@@ -16,6 +16,11 @@ export default function Results({
   selected,
   setSelected,
 }) {
+  const [showScores, setShowScores] = useState(false);
+  useEffect(() => setShowScores(false), [result]);
+  const withheld = result.assessment_limited && !showScores;
+  const scores =
+    result.assessment_limited && showScores ? result.score_estimates : result;
   const focus = result.notes[selected],
     estimated = result.source === "audio";
   const duration =
@@ -67,6 +72,21 @@ export default function Results({
           {warning}
         </div>
       ))}
+      {result.assessment_limited && (
+        <div className="notice" role="status">
+          <p>
+            {withheld
+              ? "Scores may be unreliable. Missed and extra counts are hidden until you show estimates."
+              : "Scores and counts may be unreliable. Check the notes by ear."}
+          </p>
+          <button
+            className="button secondary"
+            onClick={() => setShowScores(!showScores)}
+          >
+            {withheld ? "Show scores anyway" : "Hide scores"}
+          </button>
+        </div>
+      )}
       <div className="metrics">
         <div className="metric main-score">
           <span>
@@ -74,23 +94,25 @@ export default function Results({
             <Sparkles size={14} />
           </span>
           <div>
-            {result.score ?? "-"}
+            {scores.score ?? "-"}
             <small>/ 100</small>
           </div>
           <p>
-            {result.score == null
-              ? "Not scored: overlapping audio"
-              : "55% pitch + 45% timing"}
+            {scores.score == null
+              ? "Scores withheld: audio may be unreliable"
+              : result.assessment_limited
+                ? "May be unreliable / 55% pitch + 45% timing"
+                : "55% pitch + 45% timing"}
           </p>
           <div className="meter">
-            <i style={{ width: (result.score || 0) + "%" }} />
+            <i style={{ width: (scores.score || 0) + "%" }} />
           </div>
         </div>
         <div className="metric">
           <span>Pitch score</span>
           <div>
-            {result.pitch_score ?? "-"}
-            <small>{result.pitch_score == null ? "" : "%"}</small>
+            {scores.pitch_score ?? "-"}
+            <small>{scores.pitch_score == null ? "" : "%"}</small>
           </div>
           <p>Wrong, missed, and extra notes</p>
           <span className="metric-foot">
@@ -103,8 +125,8 @@ export default function Results({
         <div className="metric">
           <span>Timing score</span>
           <div>
-            {result.timing_score ?? "-"}
-            <small>{result.timing_score == null ? "" : "%"}</small>
+            {scores.timing_score ?? "-"}
+            <small>{scores.timing_score == null ? "" : "%"}</small>
           </div>
           <p>Start offset and tempo removed</p>
           <span className="metric-foot">
@@ -123,15 +145,17 @@ export default function Results({
           ["uncertain", "Uncertain"],
         ].map(([key, label]) => (
           <div key={key}>
-            <strong>{result.counts[key]}</strong>
+            <strong>{withheld ? "-" : result.counts[key]}</strong>
             <span>{label}</span>
           </div>
         ))}
       </div>
       {estimated && (
         <p className="count-note">
-          Counts are estimates before confidence weighting. One note can have a
-          pitch error and a timing error.
+          Counts are estimates before confidence weighting.{" "}
+          {withheld
+            ? "Counts are withheld because audio tracking may be unreliable."
+            : "One note can have a pitch error and a timing error."}
         </p>
       )}
       {tab === "overview" ? (
@@ -211,7 +235,9 @@ export default function Results({
                 <h3>Reference and performance</h3>
                 <p>
                   Outlines show the reference. Filled notes show the aligned
-                  take.
+                  take.{" "}
+                  {result.octave_shift !== 0 &&
+                    "Pitch positions include the octave adjustment. Original pitches are in the note table."}
                 </p>
               </div>
             </div>
@@ -294,7 +320,7 @@ export default function Results({
                 <button
                   key={bar.number}
                   disabled={bar.first_index == null}
-                  className={`phrase ${bar.mistakes / Math.max(bar.total, 1) > 0.3 ? "warm" : bar.mistakes ? "mild" : "cool"}`}
+                  className={`phrase ${withheld ? "" : bar.mistakes / Math.max(bar.total, 1) > 0.3 ? "warm" : bar.mistakes ? "mild" : "cool"}`}
                   onClick={() => {
                     setSelected(bar.first_index);
                     setTab("details");
@@ -305,7 +331,9 @@ export default function Results({
                     <ArrowUpRight size={14} />
                   </span>
                   <strong>
-                    {!bar.total && !bar.extra ? (
+                    {withheld ? (
+                      "Unreliable"
+                    ) : !bar.total && !bar.extra ? (
                       "Rest"
                     ) : bar.mistakes ? (
                       `${bar.mistakes} flagged`
@@ -351,7 +379,16 @@ export default function Results({
                     <td>{n.measure}</td>
                     <td>{n.time.toFixed(2)}s</td>
                     <td>{name(n.pitch)}</td>
-                    <td>{n.played == null ? "-" : name(n.played)}</td>
+                    <td>
+                      {n.played == null
+                        ? "-"
+                        : name(n.raw_played_pitch ?? n.played)}
+                      {n.played != null && result.octave_shift !== 0 && (
+                        <small className="second-status">
+                          Compared as {name(n.played)}
+                        </small>
+                      )}
+                    </td>
                     <td>{offset(n.error_ms)}</td>
                     <td>
                       {n.confidence == null
@@ -360,7 +397,9 @@ export default function Results({
                     </td>
                     <td>
                       <span className={"status-tag " + n.status}>
-                        {n.status}
+                        {result.assessment_limited
+                          ? `possible ${n.status}`
+                          : n.status}
                       </span>
                       {n.pitch_status === "wrong" &&
                         n.timing_status !== "good" && (
@@ -376,11 +415,13 @@ export default function Results({
                     <td>{n.measure}</td>
                     <td>{n.time.toFixed(2)}s</td>
                     <td>-</td>
-                    <td>{name(n.pitch)}</td>
+                    <td>{name(n.raw_pitch ?? n.pitch)}</td>
                     <td>-</td>
                     <td>{Math.round(n.confidence * 100)}%</td>
                     <td>
-                      <span className="status-tag extra">extra</span>
+                      <span className="status-tag extra">
+                        {result.assessment_limited ? "possible extra" : "extra"}
+                      </span>
                     </td>
                   </tr>
                 ))}

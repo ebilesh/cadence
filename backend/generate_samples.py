@@ -37,5 +37,6 @@ report["recommendations"] = rules(report)
 public = folder.parent / "frontend" / "public" / "samples"
 public.mkdir(parents=True, exist_ok=True)
 for sample in folder.iterdir():
-    shutil.copy2(sample, public / sample.name)
+    if sample.is_file():
+        shutil.copy2(sample, public / sample.name)
 print("Generated MIDI files, audio samples, and the Python demo report.")
