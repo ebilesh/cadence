@@ -57,7 +57,7 @@ Open **http://127.0.0.1:5173**. The frontend forwards `/api` requests to Python 
 
 **Microphone:** select Audio and click Record microphone. Allow the browser permission, play the passage, then stop. The browser saves mono PCM WAV before uploading it. Recording stops after 119 seconds. A pending permission request times out with a message. I tested the recording code with a generated audio stream, not a physical piano recording.
 
-**Keyboard:** connect a USB MIDI keyboard and choose Keyboard. Use the optional reference MIDI field for another piece; leave it empty for the C major demo. Click Connect MIDI keyboard, record, then Stop & analyze. Note-off messages close each note. Still-held notes close when I stop. Chrome or Edge on localhost/HTTPS is needed. I tested synthetic MIDI messages; physical USB input and browser permission still need a manual check.
+**Keyboard:** connect a USB MIDI keyboard and choose Keyboard. Use the optional reference MIDI field for another piece; leave it empty for the C major demo. Click Connect MIDI keyboard, record, then Stop & analyze. Note-off messages close each note. Still-held notes close when I stop. Chrome or Edge on localhost/HTTPS is needed. I tested live USB input with an Akai MPK mini 3 in Chrome, along with synthetic MIDI messages. Other devices and browsers still need testing.
 
 I limit each file to 20 MB, the whole request to 22 MB, each sequence to 600 notes, and passages to two minutes. MP3, WebM uploads, and sheet-music OCR are outside this version.
 
@@ -174,7 +174,7 @@ python tools/update_demo.py
 - `frontend/src/capture.js`: microphone WAV capture and MIDI event handling.
 - `samples/`: original MIDI and synthesized audio.
 - `demo/`: built frontend and saved Python report for the quick demo.
-- [Architecture](docs/architecture.md) : design choices, checks, and remaining limits.
+- [Architecture](docs/architecture.md): design choices, checks, and remaining limits.
 
 ## Limits and next ideas
 
