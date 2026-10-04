@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Capture checks</title></head><body>
+<h1>Capture checks</h1><p>This page uses generated sound and MIDI events. It does not request microphone access.</p>
+<button id="run">Run capture checks</button><pre id="result">Not run</pre>
+<script type="module">
+import {startAudioRecording, startMidiCapture} from '/src/capture.js';
+document.querySelector('#run').onclick = async () => {
+  const output = document.querySelector('#result'); output.textContent = 'Running';
+  try {
+    const context = new AudioContext(); await context.resume();
+    const oscillator = context.createOscillator(), target = context.createMediaStreamDestination();
+    oscillator.frequency.value = 440; oscillator.connect(target); oscillator.start();
+    const recorder = await startAudioRecording(target.stream);
+    await new Promise(done => setTimeout(done, 500));
+    const file = await recorder.stop(); oscillator.stop(); await context.close();
+    const view = new DataView(await file.arrayBuffer());
+    if (view.byteLength <= 44 || view.getUint32(24,true)<22050) throw Error('No PCM samples recorded');
+    const decoder=new AudioContext();
+    const decoded = await decoder.decodeAudioData(await file.arrayBuffer()); await decoder.close();
+    if (decoded.duration < .2) throw Error('Recording is too short');
+    let now = 0; const input = {id:'synthetic'};
+    const capture = startMidiCapture({inputs:new Map([['synthetic',input]])},()=>{},()=>now);
+    input.onmidimessage({data:[144,60,90]}); now=500; input.onmidimessage({data:[128,60,0]});
+    const notes=capture.stop(); if (notes.length!==1 || notes[0].duration!==.5) throw Error('MIDI capture failed');
+    output.textContent=`PASS: AudioWorklet recorded ${file.size} bytes of WAV (${decoded.duration.toFixed(2)}s). MIDI captured C4 for 0.50s. Handlers and streams stopped.`;
+  } catch(error) { output.textContent='FAIL: '+error.message; }
+};
+</script></body></html>
