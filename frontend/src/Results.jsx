@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowUpRight, Check, Music2, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowUpRight, Check, Music2, RotateCcw } from "lucide-react";
 
 const name = (pitch) =>
   ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"][
@@ -91,7 +91,7 @@ export default function Results({
         <div className="metric main-score">
           <span>
             {estimated ? "Estimated score" : "Practice score"}
-            <Sparkles size={14} />
+            <Music2 size={14} />
           </span>
           <div>
             {scores.score ?? "-"}
@@ -432,8 +432,8 @@ export default function Results({
       )}
       <section className="coach-card">
         <div className="coach-heading">
-          <span className="sparkle-box">
-            <Sparkles size={20} />
+          <span className="practice-icon">
+            <Music2 size={20} />
           </span>
           <div>
             <h3>What to practice</h3>
@@ -449,7 +449,6 @@ export default function Results({
         <div className="recommendations">
           {result.recommendations.map((rec, i) => (
             <div key={i}>
-              <span className="step-number">0{i + 1}</span>
               <h4>{rec.title}</h4>
               <p>{rec.body}</p>
               <p className="recommendation-reason">

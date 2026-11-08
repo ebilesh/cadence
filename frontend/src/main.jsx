@@ -75,7 +75,6 @@ function App() {
     [info, setInfo] = useState(false),
     [connecting, setConnecting] = useState(false),
     [notice, setNotice] = useState(""),
-    [exportUrl, setExportUrl] = useState(""),
     [theme, setTheme] = useState(
       () =>
         localStorage.getItem("cadence-theme") ||
@@ -86,7 +85,6 @@ function App() {
     localStorage.setItem("cadence-theme", theme);
   }, [theme]);
   const audioCtx = useRef(null),
-    reportDialog = useRef(null),
     recorder = useRef(null),
     midiAccess = useRef(null),
     midiCapture = useRef(null),
@@ -103,12 +101,6 @@ function App() {
       clearTimeout(midiTimer.current);
     },
     [],
-  );
-  useEffect(
-    () => () => {
-      if (exportUrl) URL.revokeObjectURL(exportUrl);
-    },
-    [exportUrl],
   );
   async function runDemo() {
     setBusy(true);
@@ -319,44 +311,16 @@ function App() {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(result, null, 2)], { type: "application/json" }),
     );
-    setExportUrl(url);
-    reportDialog.current.showModal();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "cadence-practice-report.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return (
     <div className="shell">
-      <dialog ref={reportDialog} className="report-dialog">
-        <h2>Report JSON</h2>
-        <p>Download the file, or select and copy the text below.</p>
-        <textarea
-          aria-label="Report JSON"
-          readOnly
-          value={result ? JSON.stringify(result, null, 2) : ""}
-        />
-        <div className="header-actions">
-          <button
-            className="button secondary"
-            onClick={() =>
-              reportDialog.current.querySelector("textarea").select()
-            }
-          >
-            Select JSON
-          </button>
-          <a
-            className="button primary"
-            href={exportUrl}
-            download="cadence-practice-report.json"
-          >
-            Download JSON
-          </a>
-          <button
-            className="button secondary"
-            onClick={() => reportDialog.current.close()}
-          >
-            Close report
-          </button>
-        </div>
-      </dialog>
+      <a className="skip-link" href="#practice">Skip to practice report</a>
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-icon">
@@ -404,7 +368,7 @@ function App() {
           </button>
         </div>
       </aside>
-      <main>
+      <main id="practice">
         <header>
           <div className="breadcrumb">
             <span>Cadence / Piano practice coach</span>
@@ -433,7 +397,6 @@ function App() {
         </header>
         <div className="page-heading">
           <div>
-            <div className="eyebrow">MIDI / AUDIO</div>
             <h1>Piano practice report</h1>
             <p>Compare a take with a reference MIDI.</p>
           </div>
@@ -452,8 +415,7 @@ function App() {
             alignment. Timing is measured after removing start delay and overall
             tempo differences. MIDI supports chords; audio estimates one pitch
             per onset and works best with single-note passages. Bar numbers come
-            from the reference MIDI. Rules give suggestions by default; local or
-            hosted models are optional.
+            from the reference MIDI. Practice exercises follow the measured errors.
           </div>
         )}
         {notice && (
@@ -474,7 +436,7 @@ function App() {
               <span>♪</span>
             </div>
             <div className="session-copy">
-              <div className="eyebrow">
+              <div className="session-label">
                 {result.source === "demo"
                   ? "Demo results"
                   : "Uploaded performance"}
@@ -559,6 +521,7 @@ function App() {
                   <button
                     key={key}
                     disabled={recording || busy || connecting}
+                    aria-pressed={mode === key}
                     className={mode === key ? "selected" : ""}
                     onClick={() => {
                       setMode(key);
@@ -700,8 +663,7 @@ function App() {
                 <Check size={13} />
                 <span>
                   Files are deleted after analysis.
-                  <br />
-                  Model suggestions use a short error summary.
+
                 </span>
               </div>
               <div className="sample-downloads">
@@ -725,7 +687,6 @@ function App() {
               )}
             </section>
             <section className="demo-card">
-              <span className="eyebrow">SAMPLE DATA</span>
               <h3>Quick demo</h3>
               <p>
                 A short C major exercise with timing and pitch errors. No files
@@ -738,21 +699,11 @@ function App() {
               >
                 Quick demo <ArrowUpRight size={16} />
               </button>
-              <div className="demo-wave">
-                {Array.from({ length: 40 }, (_, i) => (
-                  <i
-                    key={i}
-                    style={{
-                      height: 12 + Math.abs(Math.sin(i * 1.7)) * 32 + "px",
-                    }}
-                  />
-                ))}
-              </div>
             </section>
           </aside>
         </div>
         <footer>
-          <span>Cadence / React + Python</span>
+          <span>Cadence</span>
           <span>Pitch and timing analysis</span>
         </footer>
       </main>

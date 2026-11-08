@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-08T17:22:04.615540+00:00",
+  "title": "Design System: Cadence",
+  "extensions": {
+    "colorMeta": {
+      "green": {
+        "role": "primary",
+        "displayName": "Green",
+        "canonical": "#207565"
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "Action",
+        "canonical": "#267861"
+      },
+      "action-hover": {
+        "role": "primary",
+        "displayName": "Action Hover",
+        "canonical": "#1b614c"
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Background",
+        "canonical": "#f8f9fa"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#fff"
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Text",
+        "canonical": "#243535"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#586c65"
+      },
+      "supporting-text": {
+        "role": "neutral",
+        "displayName": "Supporting Text",
+        "canonical": "#4f655b"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "canonical": "#e6ebea"
+      },
+      "focus": {
+        "role": "secondary",
+        "displayName": "Focus",
+        "canonical": "#8ebdaf"
+      },
+      "dark-background": {
+        "role": "neutral",
+        "displayName": "Dark Background",
+        "canonical": "#132019"
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark Surface",
+        "canonical": "#1c2b22"
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Dark Text",
+        "canonical": "#e2ece4"
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted",
+        "canonical": "#acbfae"
+      },
+      "dark-green": {
+        "role": "primary",
+        "displayName": "Dark Green",
+        "canonical": "#8fc9aa"
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "Dark Border",
+        "canonical": "#35483d"
+      },
+      "correct-note": {
+        "role": "secondary",
+        "displayName": "Correct Note",
+        "canonical": "#65977e"
+      },
+      "timing-note": {
+        "role": "secondary",
+        "displayName": "Timing Note",
+        "canonical": "#cca052"
+      },
+      "wrong-note": {
+        "role": "secondary",
+        "displayName": "Wrong Note",
+        "canonical": "#bd755f"
+      },
+      "uncertain-note": {
+        "role": "secondary",
+        "displayName": "Uncertain Note",
+        "canonical": "#a89bbf"
+      },
+      "extra-note": {
+        "role": "secondary",
+        "displayName": "Extra Note",
+        "canonical": "#9e805f"
+      }
+    },
+    "shadows": [
+      {
+        "name": "selected-input-mode",
+        "value": "0 1px 5px #00000008",
+        "purpose": "Subtle lift on the selected input mode."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-state",
+        "value": "background 0.2s, transform 0.2s",
+        "purpose": "Button hover; disabled under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1500px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1150px"
+      },
+      {
+        "name": "tablet",
+        "value": "960px"
+      },
+      {
+        "name": "mobile",
+        "value": "700px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "description": "Primary Button extracted from the incumbent stylesheet.",
+      "html": "<button class=\"ds-primary\">Analyze performance</button>",
+      "css": ".ds-primary { background:#267861;color:#fff;padding:12px 16px;border:0;border-radius:7px;font:600 11px \"DM Sans\",sans-serif;cursor:pointer;transition:background .2s,transform .2s; }.ds-primary:hover { background:#1b614c;transform:translateY(-1px); }.ds-primary:focus-visible { outline:3px solid #8ebdaf; outline-offset:3px; }",
+      "refersTo": "button-primary"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "description": "Secondary Button extracted from the incumbent stylesheet.",
+      "html": "<button class=\"ds-secondary\">Export report</button>",
+      "css": ".ds-secondary { background:#fff;color:#5c6e65;border:1px solid #dfe6e2;padding:12px 16px;border-radius:7px;font:600 11px \"DM Sans\",sans-serif;cursor:pointer;transition:transform .2s; }.ds-secondary:hover { transform:translateY(-1px); }.ds-secondary:focus-visible { outline:3px solid #8ebdaf; outline-offset:3px; }"
+    },
+    {
+      "name": "File Selector",
+      "kind": "input",
+      "description": "File Selector extracted from the incumbent stylesheet.",
+      "html": "<label class=\"ds-upload\"><strong>Choose a reference MIDI</strong><small>.mid or .midi</small><input type=\"file\" accept=\".mid,.midi\" aria-label=\"Reference MIDI\"></label>",
+      "css": ".ds-upload { display:flex;position:relative;flex-direction:column;align-items:center;gap:9px;text-align:center;border:1px dashed #dbe3d9;border-radius:7px;padding:23px 12px;background:#fcfdfa;color:#4f655b;font-family:\"DM Sans\",sans-serif;cursor:pointer; }.ds-upload strong { font-size:10px;font-weight:500; }.ds-upload small { font-size:9px; }.ds-upload input { position:absolute;inset:0;opacity:0;width:100%;cursor:pointer; }.ds-upload:hover { background:#f0f6ee;border-color:#84a68d; }.ds-upload:focus-within { outline:3px solid #8ebdaf;outline-offset:3px; }"
+    },
+    {
+      "name": "Active Navigation",
+      "kind": "nav",
+      "description": "Active Navigation extracted from the incumbent stylesheet.",
+      "html": "<nav><button class=\"ds-nav\" aria-current=\"page\">Practice report</button></nav>",
+      "css": ".ds-nav { background:#edf5f0;color:var(--green);border:0;border-radius:8px;padding:14px 12px;width:100%;text-align:left;font:700 12px \"DM Sans\",sans-serif;cursor:pointer; }.ds-nav:focus-visible { outline:3px solid #8ebdaf; outline-offset:3px; }"
+    },
+    {
+      "name": "Report Card",
+      "kind": "card",
+      "description": "Report Card extracted from the incumbent stylesheet.",
+      "html": "<section class=\"ds-card\"><h3>Note timeline</h3><p>Select a note to inspect it.</p></section>",
+      "css": ".ds-card { background:#fff;border:1px solid var(--border);border-radius:10px;padding:22px;font-family:\"DM Sans\",sans-serif;color:#243535; }.ds-card h3 { font-size:13px;font-weight:700;margin:0; }.ds-card p { color:#4f655b;font-size:13px;line-height:1.6;margin:7px 0 0; }",
+      "refersTo": "card"
+    }
+  ],
+  "narrative": {
+    "overview": "Cadence uses a compact, green piano practice report: clear scores, note graphics, bar summaries, and practical exercises. The interface supports comparison of pitch and timing; it does not present scores as a measure of musical expression. Product context comes from README.md.\n\nThis is a record of the incumbent interface in frontend/src/style.css, main.jsx, and Results.jsx, including the scoped readability refinements. No new visual identity or creative metaphor is established.",
+    "keyCharacteristics": [],
+    "rules": [
+      {
+        "name": "The Theme Pair Rule",
+        "body": "Use the existing dark surface, text, border, and green overrides together. Dark mode is selected through the root data-theme attribute; retain the existing status-specific overrides.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Report Rule",
+        "body": "Keep explanations readable and direct. Use plain descriptions of measured pitch and timing, and retain uncertainty labels for audio estimates.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do preserve the existing green light and dark palettes.",
+      "Do preserve chart interactions, legends, marker shapes, and uncertainty labels.",
+      "Do use clear report copy and visible keyboard focus."
+    ],
+    "donts": [
+      "Don't add decorative model-oriented imagery or unsupported claims about musical ability.",
+      "Don't use color alone to communicate note errors."
+    ]
+  }
+}

@@ -76,18 +76,14 @@ app.add_middleware(
 )
 
 
-def client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
-
-
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "recommender": os.getenv("RECOMMENDER", "rules")}
+    return {"status": "ok", "recommender": "rules"}
 
 
 @app.get("/api/demo")
 async def demo(request: Request):
-    return await recommend(analyze(*demo_events(), source="demo"), client_ip(request))
+    return await recommend(analyze(*demo_events(), source="demo"))
 
 
 async def save_upload(upload: UploadFile, folder: Path, allowed: set[str]) -> Path:
@@ -139,7 +135,7 @@ async def upload(
                 {".mid", ".midi"} if is_midi else {".wav", ".flac", ".ogg"},
             )
             result = await asyncio.to_thread(analyze_files, ref, perf, is_midi)
-        return await recommend(result, client_ip(request))
+        return await recommend(result)
     except Exception as error:
         message = (
             str(error)
@@ -196,7 +192,7 @@ async def capture(request: Request, data: Capture):
             None,
             data.meter_assumed,
         )
-        return await recommend(result, client_ip(request))
+        return await recommend(result)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
