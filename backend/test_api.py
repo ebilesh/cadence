@@ -12,13 +12,6 @@ client = TestClient(app)
 samples = Path(__file__).resolve().parents[1] / "samples"
 
 
-@pytest.fixture(autouse=True)
-def default_rules(monkeypatch):
-    monkeypatch.setenv("RECOMMENDER", "rules")
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    rec.api_requests.clear()
-
-
 def test_demo_and_capture():
     assert client.get("/api/health").json()["status"] == "ok"
     report = client.get("/api/demo").json()
@@ -118,94 +111,13 @@ def test_limits_declared_and_streamed(monkeypatch):
     assert response.status_code == 413
 
 
-def fake_provider(monkeypatch, payload, provider, status=200):
-    original = httpx.AsyncClient
-    seen = []
-
-    def handle(request):
-        body = json.loads(request.content)
-        summary = json.loads(
-            body["prompt"] if provider == "ollama" else body["messages"][1]["content"]
-        )
-        seen.append(summary)
-        assert "notes" not in summary and "reference" not in summary
-        content = (
-            {"response": json.dumps(payload)}
-            if provider == "ollama"
-            else {"choices": [{"message": {"content": json.dumps(payload)}}]}
-        )
-        return httpx.Response(status, json=content)
-
-    monkeypatch.setattr(
-        rec.httpx,
-        "AsyncClient",
-        lambda **kwargs: original(transport=httpx.MockTransport(handle), **kwargs),
-    )
-    return seen
-
-
-@pytest.mark.parametrize("provider", ["ollama", "api"])
-def test_provider_success_and_bad_measures(monkeypatch, provider):
-    monkeypatch.setenv("RECOMMENDER", provider)
-    monkeypatch.setenv("OPENAI_API_KEY", "test-placeholder")
-    recommendations = [
-        dict(
-            title="Bar 3: repeat",
-            body="Play slowly.",
-            reason="There are missed notes here.",
-            measures=[3],
-        )
-        for _ in range(3)
-    ]
-    payload = {"recommendations": recommendations}
-    seen = fake_provider(monkeypatch, payload, provider)
-    report = asyncio.run(rec.recommend(analyze(*demo_events())))
-    assert report["feedback_source"] in ["Ollama", "Hosted API"]
-    assert seen
-    payload["recommendations"][0]["measures"] = [999]
+def test_feedback_never_opens_a_network_connection(monkeypatch):
+    def forbidden(*args, **kwargs):
+        pytest.fail("Practice feedback must stay local")
+    monkeypatch.setattr(httpx, "AsyncClient", forbidden)
     report = asyncio.run(rec.recommend(analyze(*demo_events())))
     assert report["feedback_source"] == "Rules"
-    assert "Rules were used" in report["recommender_notice"]
-
-
-@pytest.mark.parametrize("provider", ["ollama", "api"])
-def test_provider_http_failure(monkeypatch, provider):
-    monkeypatch.setenv("RECOMMENDER", provider)
-    monkeypatch.setenv("OPENAI_API_KEY", "test-placeholder")
-    fake_provider(monkeypatch, {}, provider, 500)
-    report = asyncio.run(rec.recommend(analyze(*demo_events())))
-    assert report["feedback_source"] == "Rules"
-    assert report["recommender_notice"]
-
-
-def test_missing_key_and_rules_with_key(monkeypatch):
-    monkeypatch.setenv("RECOMMENDER", "api")
-    report = asyncio.run(rec.recommend(analyze(*demo_events())))
-    assert "No API key" in report["recommender_notice"]
-    monkeypatch.setenv("RECOMMENDER", "rules")
-    monkeypatch.setenv("OPENAI_API_KEY", "test-placeholder")
-    monkeypatch.setattr(
-        rec.httpx,
-        "AsyncClient",
-        lambda **kwargs: pytest.fail("Rules must not use the network"),
-    )
-    assert (
-        asyncio.run(rec.recommend(analyze(*demo_events())))["feedback_source"]
-        == "Rules"
-    )
-
-
-def test_per_ip_rate_limit(monkeypatch):
-    monkeypatch.setenv("API_REQUESTS_PER_MINUTE", "2")
-    assert rec.allow_api("first")
-    assert rec.allow_api("first")
-    assert not rec.allow_api("first")
-    assert rec.allow_api("second")
-    monkeypatch.setenv("RECOMMENDER", "api")
-    monkeypatch.setenv("OPENAI_API_KEY", "test-placeholder")
-    report = asyncio.run(rec.recommend(analyze(*demo_events()), "first"))
-    assert "request limit" in report["recommender_notice"]
-    assert report["feedback_source"] == "Rules"
+    assert len(report["recommendations"]) >= 3
 
 
 def test_polyphonic_report_hides_scores():

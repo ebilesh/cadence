@@ -14,3 +14,6 @@ __pycache__/
 
 # Phone recordings stay local.
 samples/real/
+
+# Local visual review captures.
+.impeccable/review/

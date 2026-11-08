@@ -2,7 +2,9 @@
 
 I built Cadence to compare a piano take with a MIDI reference and find the bars I should practice again. I use React for the report, FastAPI for uploads, pretty_midi for MIDI, and librosa for audio. The app checks pitch and timing. It does not grade musical expression.
 
-![The practice report](docs/preview.jpg)
+![Cadence practice report](docs/preview.jpg)
+
+[Architecture and scoring decisions](docs/architecture.md) · [Demo walkthrough](docs/walkthrough.md) · [Checks and limits](docs/review.md)
 
 ## Quick demo, without installs
 
@@ -12,7 +14,7 @@ The repo includes a built demo in `demo/`. I keep it in the repo so the demo doe
 python demo_server.py
 ```
 
-Open **http://127.0.0.1:5173**. Python 3 is the only requirement for this preview. Click **Quick demo**, **Play reference**, a note in the timeline, or a bar in the heatmap. **Export report** opens JSON I can download or copy. **Clear results** shows the empty state. The moon/sun button changes the theme.
+Open **http://127.0.0.1:5173**. Python 3 is the only requirement for this preview. Click **Quick demo**, **Play reference**, a note in the timeline, or a bar in the heatmap. **Export report** downloads the report as JSON. **Clear results** shows the empty state. The moon/sun button changes the theme.
 
 The demo report is saved output from `backend/analysis.py`, with rule suggestions from `backend/recommendations.py`. The frontend does not make up scores. A test compares the saved JSON with a fresh Python result. The demo server serves that saved report; it does not analyze uploads. Stop it with Ctrl+C before starting the development frontend on the same port.
 
@@ -99,41 +101,9 @@ The phone recordings stay local and are not included in this repository. Their t
 
 The clean take has 0 missed notes and 0 wrong pitches after filtering, with an estimated score of 91. The mistaken take has 1 missed note and 0 wrong pitches, with an estimated score of 71. Its remaining extra is still an estimate. I kept the alignment and tempo-fit functions unchanged for these fixes.
 
-## Switch the recommender
+## Practice feedback
 
-Copy the example settings:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-The backend loads `.env` when it starts. Restart it after changing the file.
-
-```dotenv
-RECOMMENDER=rules
-```
-
-**rules** is the default. It uses no model, network, or key. I get 3 to 5 suggestions tied to bar numbers, with reasons based on the measured errors. Each bar starts with its most common error type. Ties favor wrong pitches, then missed notes, timing, and extra attacks. Bars with the same problem get different drills. The whole app works in this mode.
-
-```dotenv
-RECOMMENDER=ollama
-OLLAMA_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=llama3.2:3b
-```
-
-**ollama** uses an already-running local Ollama server and an installed model. There is no key. If it is unavailable, times out, or returns invalid JSON, the report says what happened and uses rules. I verified the stopped-server fallback and tested valid response handling with a mock. Actual local model generation remains a manual check.
-
-```dotenv
-RECOMMENDER=api
-OPENAI_API_KEY=your-key
-OPENAI_MODEL=gpt-4o-mini
-API_REQUESTS_PER_MINUTE=5
-MAX_REQUEST_MB=22
-```
-
-**api** calls a hosted model only if a key is set. It may cost money. A per-IP limit allows five hosted requests per minute by default; further reports use rules. A missing key, timeout, provider error, or invalid response also falls back to rules. I tested response validation and failure cases without making a paid call.
-
-Both model modes receive only scores, error counts, and summaries for up to eight bars. They do not receive audio, filenames, or full note lists. I validate the JSON shape, string lengths, number of suggestions, and bar references before showing it. Keys stay on the backend. Never put a key in a `VITE_` variable.
+Exercises come from the errors measured in each bar. Wrong pitches lead to pitch checks, missed notes to short transition loops, and uneven entrances to metronome work. The same report produces the same exercises. Analysis and feedback run on the Python server; no external service or key is needed.
 
 ## Tests and build
 
@@ -167,7 +137,7 @@ python tools/update_demo.py
 ## Files
 
 - `backend/analysis.py`: MIDI/audio extraction, timing fit, sequence alignment, scores, and bars.
-- `backend/recommendations.py`: rules, Ollama, hosted API, validation, and API rate limiting.
+- `backend/recommendations.py`: bar-specific practice exercises.
 - `backend/main.py`: upload and capture routes, request-size limit, temporary-file cleanup.
 - `frontend/src/main.jsx`: file selection, recording controls, playback, and theme.
 - `frontend/src/Results.jsx`: scores, timeline, overlay, measure heatmap, table, and suggestions.
@@ -180,10 +150,10 @@ python tools/update_demo.py
 
 I do not score pedal, dynamics, articulation, fingering, or expression. The audio polyphony check can miss chords or flag a noisy single-note recording. Pitch confidence is also imperfect. I tested two phone recordings of a real piano as well as synthesized samples. Two recordings do not establish general accuracy on real pianos. Fast repeated notes within 150 ms can be merged, and quiet attacks can still be lost. The mistaken take still has one extra detection.
 
-I do not save uploads or session history. Files are deleted after analysis. Export a report if I want to keep it. The per-IP limiter lives in one Python process and uses the socket IP; it is not a shared limiter for several workers. Behind a proxy, users may share that address.
+I do not save uploads or session history. Files are deleted after analysis. Export a report if I want to keep it.
 
 For public hosting I would add authentication, an analysis queue, shared rate limits, and proxy limits. If frontend and backend are hosted separately, `VITE_API_URL` chooses the public API URL and `FRONTEND_ORIGINS` lists allowed frontend origins. I have not tested a public deployment.
 
 Next I want to test real piano recordings with labeled note errors, align chords as groups, handle pickups better, and compare tempo fitting with chroma DTW. I would add progress history only after checking the analysis against real playing.
 
-I used the [pretty_midi docs](https://craffel.github.io/pretty-midi/), [librosa pYIN docs](https://librosa.org/doc/0.11.0/generated/librosa.pyin.html), [Ollama API docs](https://docs.ollama.com/api/generate), and [OpenAI JSON output docs](https://developers.openai.com/api/docs/guides/structured-outputs). Code and original samples use the MIT license.
+I used the [pretty_midi docs](https://craffel.github.io/pretty-midi/), [librosa pYIN docs](https://librosa.org/doc/0.11.0/generated/librosa.pyin.html). Code and original samples use the MIT license.

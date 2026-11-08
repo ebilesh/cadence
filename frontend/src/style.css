@@ -619,7 +619,7 @@ h3 {
   align-items: center;
   gap: 11px;
 }
-.sparkle-box {
+.practice-icon {
   background: #dfeade;
   border-radius: 8px;
   padding: 9px;
@@ -1640,7 +1640,7 @@ html[data-theme="dark"] .coach-card {
   border-color: #354d3b;
 }
 html[data-theme="dark"] .session-art,
-html[data-theme="dark"] .sparkle-box,
+html[data-theme="dark"] .practice-icon,
 html[data-theme="dark"] .connection-icon {
   background: #314d38;
   color: #b1d6bb;
@@ -1875,3 +1875,43 @@ html[data-theme="dark"] .demo-card h3 {
 html[data-theme="dark"] .demo-card p {
   color: #c2d8ca;
 }
+
+/* Report refinements: keep the established green palette and note graphics. */
+::selection { background: #b8dbcd; color: #142c24; }
+:root { --muted: #586c65; }
+.brand { letter-spacing: -0.035em; }
+.session-label { font-size: 12px; color: var(--green); margin-bottom: 8px; }
+.session-art, .demo-wave, .step-number { display: none; }
+.practice-icon { color: var(--green); display: flex; align-items: center; }
+.card, .coach-card, .session-banner { box-shadow: none; }
+.button, .text-button, .nav-item, .input-switch button, .tabs button { min-height: 42px; }
+input, textarea { caret-color: var(--green); }
+.score-value, td, .metric-value { font-variant-numeric: tabular-nums; }
+.skip-link { position: fixed; top: -80px; left: 16px; z-index: 100; background: #fff; color: #142c24; padding: 12px 18px; border: 2px solid var(--green); }
+.skip-link:focus { top: 12px; }
+html[data-theme="dark"] .session-label { color: #b1d8c1; }
+@media (max-width: 700px) { .upload-column { order: -1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+html:not([data-theme="dark"]) .card-heading p,
+html:not([data-theme="dark"]) .coach-heading p,
+html:not([data-theme="dark"]) .recommendations p,
+html:not([data-theme="dark"]) .metric p,
+html:not([data-theme="dark"]) .metric-foot,
+html:not([data-theme="dark"]) .legend,
+html:not([data-theme="dark"]) .timeline-footer,
+html:not([data-theme="dark"]) .count-strip span,
+html:not([data-theme="dark"]) .privacy-note,
+html:not([data-theme="dark"]) .dropzone strong,
+html:not([data-theme="dark"]) .dropzone small,
+html:not([data-theme="dark"]) .session-copy p,
+html:not([data-theme="dark"]) .page-heading p,
+html:not([data-theme="dark"]) .sidebar-bottom p,
+html:not([data-theme="dark"]) .demo-card p,
+html:not([data-theme="dark"]) .breadcrumb span,
+html:not([data-theme="dark"]) .nav-item,
+html:not([data-theme="dark"]) .field-label,
+html:not([data-theme="dark"]) footer { color: #4f655b; }
+.card-heading p, .coach-heading p, .recommendations p, .timeline-footer { font-size: 13px; }
+html:not([data-theme="dark"]) .cool { color: #315d48; }
+html:not([data-theme="dark"]) .warm,
+html:not([data-theme="dark"]) .mild { color: #76501d; }
