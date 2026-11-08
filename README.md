@@ -18,6 +18,10 @@ Open **http://127.0.0.1:5173**. Python 3 is the only requirement for this previe
 
 The demo report is saved output from `backend/analysis.py`, with rule suggestions from `backend/recommendations.py`. The frontend does not make up scores. A test compares the saved JSON with a fresh Python result. The demo server serves that saved report; it does not analyze uploads. Stop it with Ctrl+C before starting the development frontend on the same port.
 
+## Host the demo
+
+The saved report can run on Cloudflare Workers as a free static site. The public build clearly labels sample data and links to the local app for real uploads. See [Cloudflare deployment](docs/cloudflare.md).
+
 ## Run real analysis
 
 I tested the app on Windows with Node 24, Python 3.12, and a fresh Python 3.14 virtual environment. Use Node 20.19+ or 22.12+. Python 3.12 and 3.14 both passed my tests with the current dependencies.

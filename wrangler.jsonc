@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cadence-piano",
+  "compatibility_date": "2026-11-08",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./frontend/dist",
+    "not_found_handling": "404-page"
+  }
+}

@@ -26,6 +26,7 @@ import {
   startMidiCapture,
 } from "./capture.js";
 
+const DEMO_ONLY = import.meta.env.MODE === "demo";
 const API = import.meta.env.VITE_API_URL || "";
 const demoReference = demo.notes.map((n) => ({
   pitch: n.pitch,
@@ -103,6 +104,12 @@ function App() {
     [],
   );
   async function runDemo() {
+    if (DEMO_ONLY) {
+      setResult(demo);
+      setSelected(null);
+      setNotice("");
+      return;
+    }
     setBusy(true);
     setError("");
     setNotice("");
@@ -409,6 +416,12 @@ function App() {
             Export report
           </button>
         </div>
+        {DEMO_ONLY && (
+          <div className="notice" role="note">
+            Sample report: a C major exercise with deliberate pitch and timing errors.
+            Explore the notes, play the reference, or download the report.
+          </div>
+        )}
         {info && (
           <div className="notice">
             Cadence compares your take with a MIDI reference using sequence
@@ -502,6 +515,17 @@ function App() {
             )}
           </div>
           <aside className="upload-column">
+            {DEMO_ONLY ? (
+              <section className="card upload-card">
+                <div className="card-heading"><div>
+                  <h3>Try the report</h3>
+                  <p>Select a note to inspect its pitch and timing. Select a bar to find the notes worth repeating.</p>
+                </div></div>
+                <p className="audio-note">This demo shows saved analysis. To compare your own MIDI or audio recordings, run Cadence locally.</p>
+                <a className="button primary full" href="https://github.com/ebilesh/cadence#run-real-analysis">Analyze your own take</a>
+                <a className="text-button" href="https://github.com/ebilesh/cadence/blob/main/docs/architecture.md">Read the scoring method <ArrowUpRight size={16} /></a>
+              </section>
+            ) : (
             <section className="card upload-card">
               <div className="card-heading">
                 <div>
@@ -686,6 +710,7 @@ function App() {
                 </p>
               )}
             </section>
+            )}
             <section className="demo-card">
               <h3>Quick demo</h3>
               <p>
