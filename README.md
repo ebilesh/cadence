@@ -1,5 +1,7 @@
 # Cadence
 
+[Open the live sample report](https://cadence-piano.cadence-deployment.workers.dev)
+
 I built Cadence to compare a piano take with a MIDI reference and find the bars I should practice again. I use React for the report, FastAPI for uploads, pretty_midi for MIDI, and librosa for audio. The app checks pitch and timing. It does not grade musical expression.
 
 ![Cadence practice report](docs/preview.jpg)
