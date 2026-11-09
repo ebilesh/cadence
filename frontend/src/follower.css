@@ -146,3 +146,26 @@
     justify-content: center;
   }
 }
+
+.follower-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+.follower-navigation strong {
+  display: block;
+  font-size: 14px;
+}
+.follower-navigation span {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.follower-position-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

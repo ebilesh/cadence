@@ -59,6 +59,15 @@ def run(site_dir, capture):
             expect(panel.get_by_role('button', name='Follow MIDI', exact=True)).to_be_visible()
             expect(panel.get_by_role('button', name='Follow microphone', exact=True)).to_be_visible()
             expect(page.locator('input[type=file]')).to_have_count(0)
+            transcription=page.locator('.transcription')
+            transcription.get_by_role('button',name='Try chord example',exact=True).click()
+            expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes')
+            expect(transcription.locator('svg rect')).to_have_count(12)
+            if capture:
+                page.screenshot(path=str(ROOT / 'docs/transcription.png'))
+            with page.expect_download() as midi_download:
+                transcription.get_by_role('button',name='Export MIDI',exact=True).click()
+            assert midi_download.value.suggested_filename.endswith('.mid')
             page.get_by_role('button', name='Quick demo', exact=True).click()
             panel.get_by_role('button', name='Replay study', exact=True).click()
             expect(panel.locator('.follower-detail')).to_contain_text('Matched 2', timeout=5000)

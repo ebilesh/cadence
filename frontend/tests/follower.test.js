@@ -213,3 +213,144 @@ test("native MIDI listeners coexist with capture handlers and detach on stop", a
   assert.equal(seen.length, 1);
   assert.equal(input.onmidimessage, captureHandler);
 });
+
+test("seeking starts fresh counts and restores the chosen attack without inventing misses", () => {
+  const f = new ScoreFollower(DEMO_NOTES);
+  f.observe(f.groups[0].pitches);
+  f.seek(4);
+  assert.equal(f.position, 3);
+  assert.equal(f.matched, 0);
+  assert.equal(f.skipped, 0);
+  const storage = memory();
+  saveSession(storage, DEMO_NOTES, "Study", f);
+  const recovered = restoreSession(storage).follower;
+  assert.equal(recovered.start, 4);
+  assert.equal(recovered.position, 3);
+  recovered.observe(recovered.groups[4].pitches);
+  assert.equal(recovered.matched, 1);
+  assert.equal(recovered.skipped, 0);
+  for (const bad of [-1, 8, 1.5, NaN])
+    assert.throws(() => f.seek(bad), RangeError);
+});
+
+test("legacy checkpoints restore and consecutive mismatch guidance resets after a match", () => {
+  const f = new ScoreFollower(DEMO_NOTES);
+  f.observe(f.groups[0].pitches);
+  const old = f.snapshot();
+  delete old.start;
+  delete old.unmatchedStreak;
+  const recovered = new ScoreFollower(DEMO_NOTES, old);
+  assert.equal(recovered.position, 0);
+  assert.equal(recovered.start, 0);
+  for (let i = 0; i < 3; i++) recovered.observe([90]);
+  assert.equal(recovered.unmatchedStreak, 3);
+  recovered.observe(recovered.groups[1].pitches);
+  assert.equal(recovered.unmatchedStreak, 0);
+  assert.equal(recovered.rejected, 3);
+  recovered.seek(0);
+  assert.equal(recovered.rejected, 0);
+});
+
+test("disconnecting one MIDI device drops its pending tones while other devices continue", async () => {
+  const a = { id: "a", state: "connected" },
+    b = { id: "b", state: "connected" };
+  const access = {
+      inputs: new Map([
+        ["a", a],
+        ["b", b],
+      ]),
+    },
+    seen = [];
+  const session = connectMidiFollower(
+    access,
+    (p) => seen.push(p),
+    () => {},
+    5,
+  );
+  a.onmidimessage({ data: [144, 90, 90] });
+  b.onmidimessage({ data: [144, 60, 90] });
+  a.state = "disconnected";
+  access.onstatechange();
+  await new Promise((r) => setTimeout(r, 15));
+  assert.deepEqual(seen, [[60]]);
+  assert.equal(a.onmidimessage, undefined);
+  session.stop();
+});
+
+test("MIDI state listeners coexist with other consumers and are removed on stop", () => {
+  const access = new EventTarget();
+  access.inputs = new Map();
+  const previous = () => {};
+  access.onstatechange = previous;
+  const statuses = [];
+  const session = connectMidiFollower(
+    access,
+    () => {},
+    (s) => statuses.push(s),
+  );
+  access.dispatchEvent(new Event("statechange"));
+  assert.equal(statuses.length, 2);
+  session.stop();
+  access.dispatchEvent(new Event("statechange"));
+  assert.equal(statuses.length, 2);
+  assert.equal(access.onstatechange, previous);
+});
+
+test("microphone disconnect releases resources once and signals the owner", async () => {
+  const { connectMicrophoneFollower } =
+    await import("../src/follower-input.js");
+  const original = globalThis.AudioContext;
+  let closes = 0,
+    ended = 0;
+  globalThis.AudioContext = class {
+    state = "running";
+    sampleRate = 48000;
+    async resume() {}
+    async close() {
+      this.state = "closed";
+      closes++;
+    }
+    createMediaStreamSource() {
+      return { connect() {}, disconnect() {} };
+    }
+    createAnalyser() {
+      return {
+        fftSize: 4096,
+        getFloatTimeDomainData(a) {
+          a.fill(0);
+        },
+        disconnect() {},
+      };
+    }
+  };
+  const track = new EventTarget();
+  track.readyState = "live";
+  track.stop = () => (track.readyState = "ended");
+  const stream = { getTracks: () => [track], getAudioTracks: () => [track] };
+  let session;
+  try {
+    session = await connectMicrophoneFollower(
+      () => {},
+      () => {},
+      stream,
+      () => ended++,
+    );
+    track.readyState = "ended";
+    track.dispatchEvent(new Event("ended"));
+    track.dispatchEvent(new Event("ended"));
+    session.stop();
+    assert.equal(ended, 1);
+    assert.equal(closes, 1);
+    await assert.rejects(
+      connectMicrophoneFollower(
+        () => {},
+        () => {},
+        stream,
+      ),
+      /disconnected/,
+    );
+  } finally {
+    session?.stop();
+    globalThis.AudioContext = original;
+  }
+});

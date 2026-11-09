@@ -5,11 +5,12 @@ import { detectPitch } from "./follower.js";
 export function connectMidiFollower(access, onChord, onStatus, delay = 65) {
   let stopped = false,
     timer = null,
-    pitches = new Set();
+    pitches = new Map();
   const attached = new Map();
   const flush = () => {
     timer = null;
-    if (!stopped && pitches.size) onChord([...pitches]);
+    if (!stopped && pitches.size)
+      onChord([...new Set([...pitches.values()].flatMap((set) => [...set]))]);
     pitches.clear();
   };
   const detach = ({ input, previous, handler, events }) => {
@@ -24,6 +25,7 @@ export function connectMidiFollower(access, onChord, onStatus, delay = 65) {
         entry.input.state === "disconnected"
       ) {
         detach(entry);
+        pitches.delete(id);
         attached.delete(id);
       }
     }
@@ -34,7 +36,8 @@ export function connectMidiFollower(access, onChord, onStatus, delay = 65) {
         if (stopped) return;
         const [status, pitch, velocity] = event.data;
         if ((status & 0xf0) === 0x90 && velocity > 0) {
-          pitches.add(pitch);
+          if (!pitches.has(input.id)) pitches.set(input.id, new Set());
+          pitches.get(input.id).add(pitch);
           if (!timer) timer = setTimeout(flush, delay);
         }
       };
@@ -55,7 +58,9 @@ export function connectMidiFollower(access, onChord, onStatus, delay = 65) {
     );
   };
   const previousState = access.onstatechange;
-  access.onstatechange = attach;
+  const stateEvents = typeof access.addEventListener === "function";
+  if (stateEvents) access.addEventListener("statechange", attach);
+  else access.onstatechange = attach;
   attach();
   return {
     stop() {
@@ -65,7 +70,9 @@ export function connectMidiFollower(access, onChord, onStatus, delay = 65) {
       pitches.clear();
       for (const entry of attached.values()) detach(entry);
       attached.clear();
-      if (access.onstatechange === attach) access.onstatechange = previousState;
+      if (stateEvents) access.removeEventListener("statechange", attach);
+      else if (access.onstatechange === attach)
+        access.onstatechange = previousState;
     },
   };
 }
@@ -74,6 +81,7 @@ export async function connectMicrophoneFollower(
   onPitch,
   onStatus,
   suppliedStream,
+  onEnded = () => {},
 ) {
   const stream =
     suppliedStream ||
@@ -94,16 +102,22 @@ export async function connectMicrophoneFollower(
     analyser,
     timer,
     stopped = false;
+  const endHandlers = new Map();
   const stop = () => {
     if (stopped) return;
     stopped = true;
     clearInterval(timer);
+    for (const [track, handler] of endHandlers)
+      track.removeEventListener("ended", handler);
+    endHandlers.clear();
     stream.getTracks().forEach((t) => t.stop());
     source?.disconnect();
     analyser?.disconnect();
     if (context && context.state !== "closed") void context.close();
   };
   try {
+    if (!stream.getAudioTracks().some((track) => track.readyState === "live"))
+      throw Error("Microphone disconnected. Reconnect it and try again.");
     context = new AudioContext();
     await context.resume();
     source = context.createMediaStreamSource(stream);
@@ -133,16 +147,18 @@ export async function connectMicrophoneFollower(
         onPitch([found.pitch]);
       }
     }, 60);
-    stream.getTracks().forEach((track) =>
-      track.addEventListener(
-        "ended",
-        () => {
-          stop();
-          onStatus("Microphone disconnected. Stop and reconnect to continue.");
-        },
-        { once: true },
-      ),
-    );
+    stream.getTracks().forEach((track) => {
+      const handler = () => {
+        if (stopped) return;
+        stop();
+        const message =
+          "Microphone disconnected. Your position is saved. Reconnect to continue.";
+        onStatus(message);
+        onEnded(message);
+      };
+      endHandlers.set(track, handler);
+      track.addEventListener("ended", handler, { once: true });
+    });
     onStatus(
       "Listening for the top note of each chord, C3–C6. Release between repeated notes.",
     );

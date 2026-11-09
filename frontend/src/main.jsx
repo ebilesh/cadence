@@ -21,6 +21,7 @@ import "./style.css";
 import demo from "./demo.json";
 import Results from "./Results.jsx";
 import ScoreFollowerPanel from "./ScoreFollower.jsx";
+import Transcription from "./Transcription.jsx";
 import {
   permissionRequest,
   startAudioRecording,
@@ -426,6 +427,7 @@ function App() {
             report.
           </div>
         )}
+        <Transcription demoOnly={DEMO_ONLY} />
         <ScoreFollowerPanel demoOnly={DEMO_ONLY} />
         {info && (
           <div className="notice">

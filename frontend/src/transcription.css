@@ -1,0 +1,121 @@
+.transcription {
+  padding: 24px;
+  margin: 24px 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.transcription h2 {
+  margin: 0;
+  font-family: Manrope, sans-serif;
+  font-size: 22px;
+  letter-spacing: -0.025em;
+}
+.transcription-heading p,
+.transcription-limit {
+  max-width: 75ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4f655b;
+}
+.transcription-actions,
+.transcription-result,
+.transcription-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+.transcription-result {
+  justify-content: space-between;
+  font-size: 14px;
+}
+.transcription-upload {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.transcription-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.transcription-upload:focus-within {
+  outline: 3px solid #8ebdaf;
+  outline-offset: 3px;
+}
+.transcription-roll {
+  overflow: auto;
+  max-height: 460px;
+  margin: 20px 0;
+}
+.transcription-roll svg {
+  display: block;
+  width: 100%;
+  min-width: 600px;
+}
+.transcription-roll text {
+  font: 10px sans-serif;
+  fill: currentColor;
+}
+.transcription-roll line {
+  stroke: var(--border);
+}
+.transcription-roll rect {
+  fill: #207565;
+  cursor: pointer;
+}
+.transcription-roll rect.selected {
+  fill: #cca052;
+  stroke: currentColor;
+  stroke-width: 2px;
+}
+.transcription-roll rect:focus-visible {
+  outline: 2px solid currentColor;
+}
+.transcription-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+}
+.transcription-editor input {
+  width: 140px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+}
+.transcription-error {
+  color: #a13c2b;
+  line-height: 1.6;
+}
+[data-theme="dark"] .transcription {
+  background: #1c2b22;
+}
+[data-theme="dark"] .transcription-heading p,
+[data-theme="dark"] .transcription-limit {
+  color: #acbfae;
+}
+[data-theme="dark"] .transcription-roll rect {
+  fill: #8fc9aa;
+}
+[data-theme="dark"] .transcription-roll rect.selected {
+  fill: #cca052;
+}
+[data-theme="dark"] .transcription-error {
+  color: #f3b09e;
+}
+@media (max-width: 700px) {
+  .transcription {
+    padding: 16px;
+  }
+  .transcription-actions .button {
+    flex: 1 1 140px;
+    justify-content: center;
+  }
+}
