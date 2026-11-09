@@ -1,0 +1,148 @@
+.score-follower {
+  margin: 24px 0 30px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+.follower-heading,
+.follower-reference,
+.follower-detail {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.follower-heading h2 {
+  margin: 0;
+  font-family: Manrope, sans-serif;
+  font-size: 22px;
+  letter-spacing: -0.025em;
+}
+.follower-heading p,
+.follower-limit {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4f655b;
+  max-width: 75ch;
+}
+.follower-state {
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+}
+.follower-reference {
+  margin: 16px 0 12px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.follower-score {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  list-style: none;
+  padding: 4px 4px 12px;
+  margin: 0;
+  scrollbar-color: #65977e transparent;
+}
+.follower-score li {
+  flex: 0 0 136px;
+}
+.follower-score button {
+  width: 100%;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+}
+.follower-score button:hover {
+  border-color: var(--green);
+}
+.follower-score .current button {
+  border: 2px solid var(--green);
+  padding: 11px;
+  background: #eaf3ee;
+}
+.follower-score .past button {
+  background: #f2f6f3;
+}
+.attack-number,
+.follower-score small {
+  font-size: 12px;
+  color: #4f655b;
+  font-variant-numeric: tabular-nums;
+}
+.follower-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.follower-upload {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+.follower-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.follower-upload:focus-within {
+  outline: 3px solid #8ebdaf;
+  outline-offset: 3px;
+}
+.follower-status {
+  font-size: 14px;
+  margin: 16px 0 10px;
+  line-height: 1.6;
+}
+.follower-error {
+  color: #a13c2b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.follower-detail {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.follower-limit {
+  margin-bottom: 0;
+}
+[data-theme="dark"] .score-follower {
+  background: #1c2b22;
+}
+[data-theme="dark"] .follower-heading p,
+[data-theme="dark"] .follower-limit,
+[data-theme="dark"] .attack-number,
+[data-theme="dark"] .follower-score small {
+  color: #acbfae;
+}
+[data-theme="dark"] .follower-score .current button {
+  background: #254535;
+}
+[data-theme="dark"] .follower-score .past button {
+  background: #21392b;
+}
+[data-theme="dark"] .follower-error {
+  color: #f3b09e;
+}
+@media (max-width: 700px) {
+  .score-follower {
+    padding: 16px;
+  }
+  .follower-controls .button {
+    flex: 1 1 140px;
+    justify-content: center;
+  }
+}

@@ -20,6 +20,7 @@ import {
 import "./style.css";
 import demo from "./demo.json";
 import Results from "./Results.jsx";
+import ScoreFollowerPanel from "./ScoreFollower.jsx";
 import {
   permissionRequest,
   startAudioRecording,
@@ -409,6 +410,7 @@ function App() {
             Export report
           </button>
         </div>
+        <ScoreFollowerPanel />
         {info && (
           <div className="notice">
             Cadence compares your take with a MIDI reference using sequence
