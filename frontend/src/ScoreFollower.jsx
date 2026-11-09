@@ -1,5 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Play, Square, RotateCcw, Cable, Mic, Upload } from "lucide-react";
+import {
+  Play,
+  Square,
+  RotateCcw,
+  Cable,
+  Mic,
+  Upload,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { permissionRequest } from "./capture.js";
 import {
   DEMO_NOTES,
@@ -49,13 +58,18 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
     panel = useRef(null);
   useEffect(() => {
     const current = panel.current?.querySelector("[aria-current=step]");
-    current?.scrollIntoView({
-      block: "nearest",
-      inline: "center",
-      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "instant"
-        : "smooth",
-    });
+    const list = panel.current?.querySelector(".follower-score");
+    if (current && list)
+      list.scrollTo({
+        left:
+          list.scrollLeft +
+          current.getBoundingClientRect().left -
+          list.getBoundingClientRect().left -
+          (list.clientWidth - current.clientWidth) / 2,
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
   }, [state.position]);
   const persist = () => {
     try {
@@ -94,9 +108,16 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
   }, []);
   const observe = (pitches, input) => {
     setHeard(pitches);
+    const previousPosition = engine.current.position;
     const next = engine.current.observe(pitches, input);
     setState({ ...next });
     persist();
+    if (next.unmatchedStreak >= 3)
+      setMessage(
+        "These notes have not matched. Check the next notes, or use Previous/Next to find your place.",
+      );
+    else if (input !== "demo" && next.position > previousPosition)
+      setMessage("Following your playing.");
     if (next.position === engine.current.groups.length - 1) {
       if (input === "demo") {
         generation.current++;
@@ -126,6 +147,16 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
     setState(engine.current.snapshot());
     persist();
     setMessage("Ready at the beginning. Choose an input to follow.");
+  };
+  const seek = (index) => {
+    stop();
+    setHeard([]);
+    setError("");
+    setState(engine.current.seek(index));
+    persist();
+    setMessage(
+      `Ready to follow attack ${index + 1}. Counts start from this position.`,
+    );
   };
   async function begin(input) {
     stop();
@@ -170,6 +201,14 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
           },
           (m) => {
             if (current()) setMessage(m);
+          },
+          undefined,
+          (message) => {
+            if (current()) {
+              stop();
+              persist();
+              setMessage(message);
+            }
           },
         );
       } else {
@@ -284,7 +323,10 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
     }
   }
   const groups = engine.current.groups,
-    completed = state.position === groups.length - 1;
+    completed = state.position === groups.length - 1,
+    nextIndex = state.position + 1,
+    activeIndex =
+      state.matched === 0 && state.skipped === 0 ? state.start : state.position;
   return (
     <section
       ref={panel}
@@ -314,32 +356,24 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
       <div className="follower-reference">
         <strong>{name.current}</strong>
         <span>
-          {groups.length} attacks · {state.position + 1} followed
+          {groups.length} attacks · {state.matched} matched
         </span>
       </div>
       <ol className="follower-score" aria-label="Reference chord sequence">
         {groups.map((g, i) => (
           <li
             key={i}
-            aria-current={i === state.position ? "step" : undefined}
+            aria-current={i === activeIndex ? "step" : undefined}
             className={
-              i === state.position
+              i === activeIndex
                 ? "current"
-                : i < state.position
+                : i >= state.start && i < state.position
                   ? "past"
                   : ""
             }
           >
             <button
-              onClick={() => {
-                stop();
-                engine.current = new ScoreFollower(notes.current);
-                engine.current.position = i - 1;
-                engine.current.skipped = i;
-                setState(engine.current.snapshot());
-                persist();
-                setMessage(`Ready to follow attack ${i + 1}.`);
-              }}
+              onClick={() => seek(i)}
               aria-label={`Start at attack ${i + 1}: ${g.pitches.map(noteName).join(", ")}`}
               disabled={uploading}
             >
@@ -350,6 +384,36 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
           </li>
         ))}
       </ol>
+      <div className="follower-navigation" aria-label="Score position">
+        <div>
+          <strong>
+            {completed
+              ? "Score complete"
+              : `Next: attack ${nextIndex + 1} of ${groups.length}`}
+          </strong>
+          {!completed && (
+            <span>{groups[nextIndex].pitches.map(noteName).join(" · ")}</span>
+          )}
+        </div>
+        <div className="follower-position-buttons">
+          <button
+            className="button secondary"
+            onClick={() => seek(nextIndex - 1)}
+            disabled={nextIndex === 0 || uploading}
+          >
+            <ChevronLeft size={15} />
+            Previous attack
+          </button>
+          <button
+            className="button secondary"
+            onClick={() => seek(nextIndex + 1)}
+            disabled={nextIndex >= groups.length - 1 || uploading}
+          >
+            Next attack
+            <ChevronRight size={15} />
+          </button>
+        </div>
+      </div>
       <div className="follower-controls">
         <button
           className="button primary"

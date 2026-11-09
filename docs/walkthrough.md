@@ -7,13 +7,16 @@ Start the saved demo with `python demo_server.py`. Explain the task: compare a s
 2. Click **Stop** after a few attacks, reload the page, then click **Replay from
    here**. The score and musical position restore; devices never reconnect
    automatically. Replay reaches **Complete** with eight matched attacks.
-3. Choose **Follow MIDI** to use a keyboard, or **Follow microphone** to follow
+3. Use **Previous attack** or **Next attack** to reposition. The next notes are
+   shown beside those controls. Selecting a starting position resets counts for
+   that attempt without marking earlier notes as skipped.
+4. Choose **Follow MIDI** to use a keyboard, or **Follow microphone** to follow
    one top note at a time. Microphone following estimates C3–C6 and needs a release
    between repeated notes. This is not polyphonic microphone transcription.
-4. In the saved report below, play the reference and select a flagged note.
+5. In the saved report below, play the reference and select a flagged note.
    Explain its pitch and timing separately. Open a flagged bar in the heatmap,
    follow it into the note table, and read its practice exercise.
-5. Export the report. The report is saved Python output; reference uploads and
+6. Export the report. The report is saved Python output; reference uploads and
    analysis of new takes require the full Python backend. Replay and live
    following work without an API and do not upload audio.
 

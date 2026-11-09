@@ -1,10 +1,12 @@
 # Checks and limits
 
 The score-follower revision passed 42 backend tests with two private-recording
-skips on Python 3.12, 12 frontend tests, and the production build. The browser
+skips on Python 3.12, 17 frontend tests, and the production build. The browser
 suite exercised synthetic MIDI and microphone streams, cleanup, reference upload,
 page reload, and an actual backend process restart. Synthetic inputs do not
-establish accuracy on physical hardware.
+establish accuracy on physical hardware. Additional regressions cover device
+disconnection, shared MIDI listeners, seeking without false skipped-note counts,
+legacy checkpoints, and guidance after consecutive mismatches.
 
 The public static demo is checked separately: replay completes all eight chords,
 pause/reload resumes from its checkpoint, JSON report export works, live browser

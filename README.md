@@ -195,11 +195,21 @@ Python server; loading a new reference uses `/api/reference`.
   polyphonic audio transcription; chords, pedal, noise and quiet attacks may
   prevent reliable following.
 - **Stop** pauses input and releases resources. **Start again** resets progress.
-  Click an attack to resume from that position. The score and checkpoint are
+  Use **Previous attack** / **Next attack**, or click an attack, to choose where
+  to resume. Choosing a position pauses input and starts fresh counts there;
+  earlier attacks are not counted as missed. The score and checkpoint are
   saved in local storage after each input. Reloads and backend restarts restore
   the position in a paused state; permissions and active streams never resume
   automatically. Storage failures are shown; a corrupt or incompatible checkpoint
   starts safely at the beginning. Browser storage is local to that browser/profile.
+
+The next attack and its notes are shown above the input controls. After three
+consecutive unmatched inputs, the status suggests checking those notes or
+repositioning. A successful match clears that guidance. If the microphone
+disconnects, following pauses, its resources are released, and your saved
+position remains ready to resume. MIDI devices can connect and disconnect
+without interfering with other connection listeners; pending tones from an
+unplugged device are discarded.
 
 The follower compares exact MIDI pitches as sets. A Jaccard overlap of at least
 60% accepts an attack; up to three skipped attacks are allowed. A skip penalty

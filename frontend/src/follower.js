@@ -21,6 +21,7 @@ export function groupScore(notes) {
     notes.length > 600 ||
     notes.some(
       (n) =>
+        !n ||
         !Number.isInteger(n.pitch) ||
         n.pitch < 0 ||
         n.pitch > 127 ||
@@ -56,6 +57,8 @@ export class ScoreFollower {
     this.matched = 0;
     this.skipped = 0;
     this.rejected = 0;
+    this.start = 0;
+    this.unmatchedStreak = 0;
     if (
       checkpoint?.version === 1 &&
       checkpoint.signature === this.signature &&
@@ -65,8 +68,13 @@ export class ScoreFollower {
       ["matched", "skipped", "rejected"].every(
         (k) => Number.isSafeInteger(checkpoint[k]) && checkpoint[k] >= 0,
       ) &&
-      checkpoint.matched + checkpoint.skipped === checkpoint.position + 1
+      Number.isInteger(checkpoint.start ?? 0) &&
+      (checkpoint.start ?? 0) >= 0 &&
+      (checkpoint.start ?? 0) <= checkpoint.position + 1 &&
+      checkpoint.matched + checkpoint.skipped ===
+        checkpoint.position + 1 - (checkpoint.start ?? 0)
     ) {
+      this.start = checkpoint.start ?? 0;
       Object.assign(
         this,
         Object.fromEntries(
@@ -77,6 +85,14 @@ export class ScoreFollower {
         ),
       );
     }
+  }
+  seek(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= this.groups.length)
+      throw RangeError("Choose an attack within the score.");
+    this.start = index;
+    this.position = index - 1;
+    this.matched = this.skipped = this.rejected = this.unmatchedStreak = 0;
+    return this.snapshot();
   }
   observe(pitches, mode = "midi") {
     const played = new Set(
@@ -106,7 +122,11 @@ export class ScoreFollower {
       this.skipped += best.i - this.position - 1;
       this.position = best.i;
       this.matched++;
-    } else this.rejected++;
+      this.unmatchedStreak = 0;
+    } else {
+      this.rejected++;
+      this.unmatchedStreak++;
+    }
     return this.snapshot();
   }
   snapshot() {
@@ -114,6 +134,8 @@ export class ScoreFollower {
       version: 1,
       signature: this.signature,
       position: this.position,
+      start: this.start,
+      unmatchedStreak: this.unmatchedStreak,
       matched: this.matched,
       skipped: this.skipped,
       rejected: this.rejected,
