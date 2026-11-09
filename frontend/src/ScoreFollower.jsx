@@ -14,7 +14,7 @@ import {
 } from "./follower-input.js";
 import "./follower.css";
 
-export default function ScoreFollowerPanel() {
+export default function ScoreFollowerPanel({ demoOnly = false }) {
   const [initial] = useState(() => {
     let recovered = null;
     try {
@@ -395,17 +395,19 @@ export default function ScoreFollowerPanel() {
           <RotateCcw size={15} />
           Start again
         </button>
-        <label className="button secondary follower-upload">
-          <Upload size={15} />
-          {uploading ? "Loading reference…" : "Load reference MIDI"}
-          <input
-            aria-label="Load follower reference MIDI"
-            type="file"
-            accept=".mid,.midi"
-            onChange={upload}
-            disabled={uploading}
-          />
-        </label>
+        {!demoOnly && (
+          <label className="button secondary follower-upload">
+            <Upload size={15} />
+            {uploading ? "Loading reference…" : "Load reference MIDI"}
+            <input
+              aria-label="Load follower reference MIDI"
+              type="file"
+              accept=".mid,.midi"
+              onChange={upload}
+              disabled={uploading}
+            />
+          </label>
+        )}
         <button
           className="text-button"
           onClick={() => reset(true)}

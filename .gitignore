@@ -17,3 +17,5 @@ samples/real/
 
 # Local visual review captures.
 .impeccable/review/
+
+.wrangler/
