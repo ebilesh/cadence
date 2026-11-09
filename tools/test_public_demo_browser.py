@@ -39,6 +39,8 @@ def run(site_dir, capture):
             browser = p.chromium.launch(executable_path=os.getenv('CHROMIUM_PATH') or shutil.which('chromium'), headless=True, args=['--no-sandbox'])
             options = {'viewport': {'width': 1280, 'height': 900}, 'color_scheme': 'light', 'reduced_motion': 'reduce'}
             context = browser.new_context(**options)
+            context.add_init_script("""window.cadenceAudio=[];const OriginalAudio=window.Audio;
+              window.Audio=function(...args){const audio=new OriginalAudio(...args);cadenceAudio.push(audio);return audio;};""")
             page = context.new_page()
             api_calls, errors = [], []
             page.on('request', lambda request: api_calls.append(request.url) if '/api/' in request.url else None)
@@ -63,6 +65,14 @@ def run(site_dir, capture):
             transcription.get_by_role('button',name='Try chord example',exact=True).click()
             expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes')
             expect(transcription.locator('svg rect')).to_have_count(12)
+            transcription.get_by_role('button',name='Play detected notes',exact=True).click()
+            page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .1 && !cadenceAudio.at(-1).paused")
+            transcription.get_by_role('button',name='Stop notes',exact=True).click()
+            assert page.evaluate('cadenceAudio.at(-1).paused')
+            page.get_by_role('button',name='Play reference',exact=True).click()
+            page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .1 && !cadenceAudio.at(-1).paused")
+            page.get_by_role('button',name='Stop playback',exact=True).click()
+            assert page.evaluate('cadenceAudio.at(-1).paused')
             if capture:
                 page.screenshot(path=str(ROOT / 'docs/transcription.png'))
             with page.expect_download() as midi_download:
@@ -120,8 +130,30 @@ def run(site_dir, capture):
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
                     page.screenshot(path=str(ROOT / f'docs/phone-{theme}.png'), full_page=True)
                     context.close()
+            phone = browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1')
+            phone.add_init_script("""window.cadenceAudio=[];const OriginalAudio=window.Audio;
+              window.Audio=function(...args){const audio=new OriginalAudio(...args);cadenceAudio.push(audio);return audio;};""")
+            phone_page=phone.new_page()
+            phone_page.goto(url)
+            phone_panel=phone_page.locator('.transcription')
+            phone_panel.get_by_role('button',name='Try chord example',exact=True).tap()
+            phone_panel.get_by_role('button',name='Play detected notes',exact=True).tap()
+            phone_page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .2 && !cadenceAudio.at(-1).paused")
+            phone_panel.get_by_role('button',name='Stop notes',exact=True).tap()
+            phone_page.get_by_role('button',name='Play reference',exact=True).tap()
+            phone_page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .2 && !cadenceAudio.at(-1).paused")
+            phone_page.get_by_role('button',name='Stop playback',exact=True).tap()
+            phone_follower=phone_page.locator('.score-follower')
+            phone_follower.get_by_role('button',name='Replay study',exact=True).tap()
+            expect(phone_follower.locator('.follower-detail')).to_contain_text('Matched 1',timeout=5000)
+            phone_follower.get_by_role('button',name='Stop',exact=True).tap()
+            assert phone_page.evaluate('cadenceAudio.at(-1).paused')
+            phone_page.evaluate("() => { HTMLMediaElement.prototype.play=()=>Promise.reject(new DOMException('Blocked','NotAllowedError')); }")
+            phone_page.get_by_role('button',name='Play reference',exact=True).tap()
+            expect(phone_page.locator('.notice').filter(has_text='Audio could not start')).to_be_visible()
+            phone.close()
             browser.close()
-            print('PASS: public demo needs no API; replay, reload recovery, JSON export, live-input controls, and upload isolation work.')
+            print('PASS: public demo needs no API; replay, reload recovery, JSON export, live-input controls, upload isolation, and all three mobile media-audio buttons work.')
             if capture:
                 print('Updated desktop/mobile light/dark screenshots, preview images, and silent MP4/GIF replay recording.')
     finally:

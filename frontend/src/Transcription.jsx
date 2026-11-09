@@ -11,6 +11,7 @@ import { noteName } from "./follower.js";
 import { encodeTranscriptionMidi, validateNotes } from "./transcription.js";
 import example from "./transcription-demo.json";
 import "./transcription.css";
+import { createNotePlayback, AUDIO_HELP } from "./audio-playback.js";
 
 export default function Transcription({ demoOnly = false }) {
   const [result, setResult] = useState(null),
@@ -23,10 +24,8 @@ export default function Transcription({ demoOnly = false }) {
     [title, setTitle] = useState("");
   const request = useRef(null),
     audio = useRef(null),
-    timer = useRef(null),
     mounted = useRef(true);
   const stop = () => {
-    clearTimeout(timer.current);
     if (audio.current && audio.current.state !== "closed")
       void audio.current.close();
     audio.current = null;
@@ -37,7 +36,6 @@ export default function Transcription({ demoOnly = false }) {
     return () => {
       mounted.current = false;
       request.current?.abort();
-      clearTimeout(timer.current);
       if (audio.current && audio.current.state !== "closed")
         void audio.current.close();
     };
@@ -125,39 +123,33 @@ export default function Transcription({ demoOnly = false }) {
   async function play() {
     stop();
     setError("");
-    let context;
     try {
-      context = new AudioContext();
-      audio.current = context;
-      await context.resume();
-      if (audio.current !== context || !mounted.current) return;
-      const now = context.currentTime + 0.05;
-      for (const note of notes) {
-        const oscillator = context.createOscillator(),
-          gain = context.createGain();
-        oscillator.type = "triangle";
-        oscillator.frequency.value = 440 * 2 ** ((note.pitch - 69) / 12);
-        const start = now + note.start,
-          end = start + note.duration;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.025, start + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, end + 0.03);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(start);
-        oscillator.stop(end + 0.04);
-      }
-      setPlaying(true);
-      timer.current = setTimeout(
-        stop,
-        (Math.max(...notes.map((n) => n.start + n.duration)) + 0.2) * 1000,
-      );
-    } catch (e) {
+      const player = createNotePlayback(notes, {
+        onEnded: () => {
+          if (mounted.current) setPlaying(false);
+        },
+        onStop: () => {
+          if (mounted.current) setPlaying(false);
+        },
+        onError: () => {
+          if (mounted.current) {
+            setPlaying(false);
+            setError(AUDIO_HELP);
+          }
+        },
+      });
+      audio.current = player;
+      await player.ready;
+      if (
+        audio.current === player &&
+        mounted.current &&
+        player.state !== "closed"
+      )
+        setPlaying(true);
+    } catch (error) {
       if (mounted.current) {
         stop();
-        setError(
-          "Playback could not start. Try again in a browser with audio support.",
-        );
+        setError(error.message || AUDIO_HELP);
       }
     }
   }

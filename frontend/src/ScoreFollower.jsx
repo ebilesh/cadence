@@ -22,6 +22,7 @@ import {
   connectMicrophoneFollower,
 } from "./follower-input.js";
 import "./follower.css";
+import { createNotePlayback } from "./audio-playback.js";
 
 export default function ScoreFollowerPanel({ demoOnly = false }) {
   const [initial] = useState(() => {
@@ -212,55 +213,57 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
           },
         );
       } else {
-        const context = new AudioContext();
-        sound.current = context;
-        await context.resume();
+        const groups = engine.current.groups,
+          first = engine.current.position + 1,
+          base = groups[first].start;
+        let index = first,
+          tick = () => {};
+        const player = createNotePlayback(
+          groups
+            .slice(first)
+            .flatMap((group) =>
+              group.pitches.map((pitch) => ({
+                pitch,
+                start: 0.25 + group.start - base,
+                duration: 0.55,
+              })),
+            ),
+          {
+            onEnded: () => tick(true),
+            onStop: () => {
+              if (current()) {
+                stop();
+                persist();
+                setMessage("Playback paused. Your position is saved.");
+              }
+            },
+            onError: (error) => {
+              if (current()) {
+                stop();
+                setError(error.message);
+              }
+            },
+          },
+        );
+        sound.current = player;
+        await player.ready;
         if (!current()) {
-          void context.close();
+          player.close();
           return;
         }
-        let index = engine.current.position + 1,
-          timer,
-          cancelled = false;
-        const replay = () => {
-          if (!current() || cancelled) return;
-          const chord = engine.current.groups[index++];
-          if (!chord) return;
-          for (const pitch of chord.pitches) {
-            const oscillator = context.createOscillator(),
-              gain = context.createGain();
-            oscillator.frequency.value = 440 * 2 ** ((pitch - 69) / 12);
-            oscillator.type = "triangle";
-            gain.gain.setValueAtTime(
-              0.07 / chord.pitches.length,
-              context.currentTime,
-            );
-            gain.gain.exponentialRampToValueAtTime(
-              0.001,
-              context.currentTime + 0.5,
-            );
-            oscillator.connect(gain);
-            gain.connect(context.destination);
-            oscillator.start();
-            oscillator.stop(context.currentTime + 0.55);
+        tick = (finished = false) => {
+          while (
+            current() &&
+            index < groups.length &&
+            (finished ||
+              player.element.currentTime >= 0.25 + groups[index].start - base)
+          ) {
+            observe(groups[index++].pitches, "demo");
           }
-          observe(chord.pitches, "demo");
-          if (current() && !cancelled && index < engine.current.groups.length)
-            timer = setTimeout(
-              replay,
-              Math.max(
-                70,
-                (engine.current.groups[index].start - chord.start) * 1000,
-              ),
-            );
         };
-        timer = setTimeout(replay, 250);
-        session = {
-          stop: () => {
-            cancelled = true;
-            clearTimeout(timer);
-          },
-        };
+        const timer = setInterval(() => tick(), 30);
+        session = { stop: () => clearInterval(timer) };
+        tick();
         setMessage("Playing the reference chords through the live follower.");
       }
       if (!current()) {

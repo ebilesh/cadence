@@ -22,6 +22,7 @@ import demo from "./demo.json";
 import Results from "./Results.jsx";
 import ScoreFollowerPanel from "./ScoreFollower.jsx";
 import Transcription from "./Transcription.jsx";
+import { createNotePlayback, AUDIO_HELP } from "./audio-playback.js";
 import {
   permissionRequest,
   startAudioRecording,
@@ -280,41 +281,30 @@ function App() {
       setBusy(false);
     }
   }
-  function listen() {
+  async function listen() {
     if (playing) {
-      if (audioCtx.current?.state !== "closed") audioCtx.current?.close();
+      audioCtx.current?.close();
       setPlaying(false);
       return;
     }
-    const ctx = new AudioContext();
-    audioCtx.current = ctx;
-    const events = result?.reference || demoReference;
-    events.forEach((n) => {
-      const oscillator = ctx.createOscillator(),
-        gain = ctx.createGain();
-      oscillator.type = "triangle";
-      oscillator.frequency.value = 440 * 2 ** ((n.pitch - 69) / 12);
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0, ctx.currentTime + n.start);
-      gain.gain.linearRampToValueAtTime(0.13, ctx.currentTime + n.start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + n.start + n.duration,
-      );
-      oscillator.start(ctx.currentTime + n.start);
-      oscillator.stop(ctx.currentTime + n.start + n.duration + 0.05);
-    });
-    setPlaying(true);
-    setTimeout(
-      () => {
-        if (audioCtx.current === ctx) {
-          if (ctx.state !== "closed") ctx.close();
+    setNotice("");
+    try {
+      const player = createNotePlayback(result?.reference || demoReference, {
+        onEnded: () => setPlaying(false),
+        onStop: () => setPlaying(false),
+        onError: () => {
           setPlaying(false);
-        }
-      },
-      (Math.max(...events.map((n) => n.start + n.duration)) + 0.2) * 1000,
-    );
+          setNotice(AUDIO_HELP);
+        },
+      });
+      audioCtx.current = player;
+      await player.ready;
+      if (audioCtx.current === player && player.state !== "closed")
+        setPlaying(true);
+    } catch (error) {
+      setPlaying(false);
+      setNotice(error.message || AUDIO_HELP);
+    }
   }
   function exportReport() {
     const url = URL.createObjectURL(

@@ -21,6 +21,15 @@ reference uploads and full performance analysis require the local app.
 [Mobile light](docs/phone-light.png) · [Mobile dark](docs/phone-dark.png)
 
 
+## Phone audio playback
+
+Tap **Play detected notes**, **Replay study**, or **Play reference** to start
+sound. Playback uses a standard media-audio player so it can use the phone's
+music route without an unlocked Web Audio context. One passage plays at a time.
+If playback is blocked, the app shows an error instead of silently advancing.
+Open the site directly in Safari or Chrome and check the media volume and
+Bluetooth output if you still hear nothing.
+
 ## Transcribe piano recordings with AI
 
 Start the Python backend and development frontend using **Run real analysis**

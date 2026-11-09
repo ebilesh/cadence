@@ -87,3 +87,14 @@ This path is separate from the practice-report audio tracker and the live
 microphone follower, both of which remain monophonic. Synthetic chord regression
 checks are reproducible but do not establish real-piano accuracy. Acoustic piano,
 pedal, noisy rooms, and dense passages require a labeled recording benchmark.
+
+
+## Phone-compatible playback
+
+`frontend/src/audio-playback.js` renders bounded practice passages into a PCM WAV
+and starts an HTML media-audio element synchronously from the user's tap. When
+available, the browser audio-session type is set to playback. Recording and live
+pitch detection retain their input-specific Web Audio paths. A single shared
+player stops the previous passage and releases media URLs on stop, end or error.
+Follower replay advances from the media clock rather than wall-clock timers, so
+blocked or stalled audio does not run the score ahead of the sound.
