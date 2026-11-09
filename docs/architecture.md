@@ -80,8 +80,7 @@ adapted decoder. ONNX Runtime telemetry is disabled.
 addition/deletion, local synthesized playback, and local MIDI export. The MIDI
 writer uses 480 ticks/beat at 120 BPM to preserve the estimated seconds, not to
 claim a detected musical tempo. The public build uses a disclosed saved model
-result; it hides transcription uploads. Edits are intentionally transient and
-must be exported before leaving the tab.
+result; it hides transcription uploads. Unsaved edits are transient; naming and saving a studio session retains working notes, original audio, and settings in IndexedDB. MIDI export provides a portable copy.
 
 This path is separate from the practice-report audio tracker and the live
 microphone follower, both of which remain monophonic. Synthetic chord regression
@@ -98,3 +97,27 @@ pitch detection retain their input-specific Web Audio paths. A single shared
 player stops the previous passage and releases media URLs on stop, end or error.
 Follower replay advances from the media clock rather than wall-clock timers, so
 blocked or stalled audio does not run the score ahead of the sound.
+
+
+## Practice studio
+
+`studio-core.js` owns immutable bounded editing history, piano/time bounds,
+clipping and time scaling for practice loops, click-track scheduling, and the
+quantized notation timeline. `session-store.js` serializes IndexedDB operations
+so an in-flight autosave cannot re-create a deleted session. Transcriptions save
+original notes, working notes, practice settings and the original Blob. Reports
+use a separate record kind and reopen in the report workspace.
+
+`Transcription.jsx` coordinates editor/history, audio source comparison, looping,
+session persistence and the library. The staff renderer is lazy-loaded from
+VexFlow's Bravura-only entry point with embedded music fonts; the initial editor
+bundle does not load the notation engine. Typeface and notation licenses ship in
+public assets. The app shell uses workspace hashes and stops input capture when
+leaving a recording/following workspace.
+
+`StudioRecorder.jsx` arms microphone access explicitly. On Record it prepares a
+deferred AudioWorklet recording within the user gesture, while optional count-in
+media plays. PCM is ignored until the count-in completes; capture is bounded to
+59 seconds. Cancellation, workspace changes and unmount release tracks and
+contexts. Browser tests use generated sound through the actual worklet and AI
+transcription endpoint; physical microphone testing is still separate.

@@ -21,6 +21,44 @@ reference uploads and full performance analysis require the local app.
 [Mobile light](docs/phone-light.png) · [Mobile dark](docs/phone-dark.png)
 
 
+## Piano studio
+
+Use the navigation rail (top bar on phones) to move between **Piano studio**,
+**Live following**, **Practice report**, and **Saved sessions**.
+
+- **Compare what you played with what AI heard.** Switch between Original audio
+  and Detected notes. Change speed from 25% to 200%; original audio preserves
+  pitch where supported by the browser.
+- **Practice a section.** Set From/To times, enable Loop section, and slow it
+  down. A four-beat count-in plays once before the musical passage. Enable the
+  metronome for detected-note playback, or use Metronome only on its own.
+- **Edit with confidence.** Drag a note left/right for timing and up/down for
+  pitch. Arrow keys nudge the focused note. The form sets exact pitch, start and
+  duration. Add/delete notes; Undo and Redo keep the last 50 edits reversible.
+- **Keep a session.** Name the take and choose Save session. Notes, the original
+  recording, and practice settings stay in this browser's IndexedDB. Subsequent
+  edits autosave; the last named session restores on reload. Use Saved sessions
+  to reopen or delete a take. Deletion asks for confirmation. Sessions do not
+  sync between devices, and clearing browser data removes them.
+- **Keep a report.** In Practice report choose Save practice report. Open it later
+  from the same session shelf, or use Export report for a portable JSON copy.
+- **Read the staff.** Sheet music renders a grand staff with rests, accidentals
+  and ties. Set the tempo first. The view assumes 4/4 and quantizes to eighth
+  notes; it is an editable practice aid through the piano roll, not a verified
+  score. Four bars are shown per page.
+- **Record a new take in the full app.** Enable microphone, choose a tempo and
+  optional four-beat count-in, then Record take. The recorder prepares audio in
+  the initial tap and discards count-in samples. Stop & transcribe sends only the
+  take to the existing analysis server. Recording stops after 59 seconds and
+  leaving the workspace releases the microphone.
+
+![Quantized grand staff practice view](docs/sheet-music.png)
+
+The public demo supports comparison, loops, editing, saving and notation on the
+included example. New uploads and recording-to-transcription still require the
+Python backend. WAV is the most portable format for original-audio playback;
+other supported upload formats also depend on browser codec support.
+
 ## Phone audio playback
 
 Tap **Play detected notes**, **Replay study**, or **Play reference** to start
@@ -45,7 +83,7 @@ No reference MIDI, AI API key, GPU, or external service is required.
   start or length, delete an extra note, or add a missing note.
 - **Play detected notes** synthesizes the estimates. **Export MIDI** includes
   your corrections and works entirely in the browser. **Undo all edits** restores
-  the model output. Corrections stay in this tab; export before leaving.
+  the model output. Save a session to retain corrections and the original recording on this device, or export MIDI.
 - Audio is temporarily processed by the local Python server and deleted after
   analysis. Only one transcription runs at a time. Cancelling the browser request
   does not interrupt an already-running model; the next upload may briefly report
@@ -120,6 +158,8 @@ npm run dev
 Open **http://127.0.0.1:5173**. The frontend forwards `/api` requests to Python on port 8000. API docs are at **http://127.0.0.1:8000/docs**. The first audio analysis can take longer because numerical functions compile. The saved demo starts quickly even without those packages.
 
 ## Input modes
+
+Open **Practice report** for the reference-comparison input modes below. The Piano studio transcription workflow above does not require a reference.
 
 **MIDI files:** choose `samples/reference.mid` and `samples/performance.mid`, then click Analyze performance. For my own music, I use two files covering the same passage. MIDI gives exact recorded pitch and note-on times. Chords are supported, but dense simultaneous notes can still make alignment ambiguous.
 
@@ -218,13 +258,13 @@ python tools/update_demo.py
 
 I do not score pedal, dynamics, articulation, fingering, or expression. The audio polyphony check can miss chords or flag a noisy single-note recording. Pitch confidence is also imperfect. I tested two phone recordings of a real piano as well as synthesized samples. Two recordings do not establish general accuracy on real pianos. Fast repeated notes within 150 ms can be merged, and quiet attacks can still be lost. The mistaken take still has one extra detection.
 
-I do not save uploads or session history. Files are deleted after analysis. Export a report if I want to keep it.
+The analysis server deletes uploaded files after processing. Named studio sessions can retain original audio, corrections and practice settings in this browser; saved reports retain report data. Use MIDI/JSON export for portable copies. There is no cloud session history or device synchronization.
 
 For public hosting I would add authentication, an analysis queue, shared rate limits, and proxy limits. If frontend and backend are hosted separately, `VITE_API_URL` chooses the public API URL and `FRONTEND_ORIGINS` lists allowed frontend origins. I have not tested a public deployment.
 
 Next I want to test real piano recordings with labeled note errors, align chords as groups, handle pickups better, and compare tempo fitting with chroma DTW. I would add progress history only after checking the analysis against real playing.
 
-I used the [pretty_midi docs](https://craffel.github.io/pretty-midi/), [librosa pYIN docs](https://librosa.org/doc/0.11.0/generated/librosa.pyin.html). Original Cadence code and samples use the MIT license. The bundled Basic Pitch model and adapted decoder retain their Apache 2.0 license and notices.
+I used the [pretty_midi docs](https://craffel.github.io/pretty-midi/), [librosa pYIN docs](https://librosa.org/doc/0.11.0/generated/librosa.pyin.html). Original Cadence code and samples use the MIT license. Self-hosted typefaces retain their OFL licenses, and VexFlow retains its MIT license; notices are served in `frontend/public/licenses/`. The bundled Basic Pitch model and adapted decoder retain their Apache 2.0 license and notices.
 
 ## Cadence Score Follower
 

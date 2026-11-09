@@ -1,6 +1,6 @@
 # Cloudflare demo
 
-The public site serves the React interface, sample audio, and a saved report as static assets. It has no Python API, upload endpoint, database, or paid bindings. Demo mode hides server upload and recording controls and loads the bundled report without an API request. The score follower retains audible replay, live Web MIDI, and local single-note microphone following on HTTPS; its reference-upload control is hidden. The AI transcription panel offers an editable saved chord example and client-side MIDI export; new-audio transcription requires the local Python server. Audio is processed locally, and score/position checkpoints remain in browser storage. The normal development build keeps all analysis inputs.
+The public site serves the React interface, sample audio, and a saved report as static assets. It has no Python API, upload endpoint, database, or paid bindings. Demo mode hides server upload and recording controls and loads the bundled report without an API request. The score follower retains audible replay, live Web MIDI, and local single-note microphone following on HTTPS; its reference-upload control is hidden. The piano studio offers an editable saved chord example, original-audio comparison, loops, browser-local sessions, quantized notation and client-side MIDI export; new-audio transcription requires the local Python server. Audio is processed locally, and score/position checkpoints remain in browser storage. The normal development build keeps all analysis inputs.
 
 From the repository root, install Node 22 or later and run:
 

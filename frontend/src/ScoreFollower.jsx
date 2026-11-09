@@ -24,7 +24,10 @@ import {
 import "./follower.css";
 import { createNotePlayback } from "./audio-playback.js";
 
-export default function ScoreFollowerPanel({ demoOnly = false }) {
+export default function ScoreFollowerPanel({
+  demoOnly = false,
+  active = true,
+}) {
   const [initial] = useState(() => {
     let recovered = null;
     try {
@@ -90,6 +93,9 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
     sound.current = null;
     setMode("idle");
   };
+  useEffect(() => {
+    if (!active) stop();
+  }, [active]);
   useEffect(() => {
     alive.current = true;
     const suspend = () => {
@@ -219,15 +225,13 @@ export default function ScoreFollowerPanel({ demoOnly = false }) {
         let index = first,
           tick = () => {};
         const player = createNotePlayback(
-          groups
-            .slice(first)
-            .flatMap((group) =>
-              group.pitches.map((pitch) => ({
-                pitch,
-                start: 0.25 + group.start - base,
-                duration: 0.55,
-              })),
-            ),
+          groups.slice(first).flatMap((group) =>
+            group.pitches.map((pitch) => ({
+              pitch,
+              start: 0.25 + group.start - base,
+              duration: 0.55,
+            })),
+          ),
           {
             onEnded: () => tick(true),
             onStop: () => {

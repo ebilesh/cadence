@@ -55,12 +55,13 @@ export async function permissionRequest(
   }
 }
 
-export async function startAudioRecording(stream) {
+export async function startAudioRecording(stream, { defer = false } = {}) {
   const context = new AudioContext();
   let source,
     processor,
     stopped = false;
   const chunks = [];
+  let recording = !defer;
   try {
     await context.audioWorklet.addModule("/recorder-worklet.js");
     await context.resume();
@@ -68,13 +69,19 @@ export async function startAudioRecording(stream) {
     processor = new AudioWorkletNode(context, "pcm-recorder");
     source.connect(processor);
     processor.connect(context.destination);
-    processor.port.onmessage = (event) => chunks.push(event.data);
+    processor.port.onmessage = (event) => {
+      if (recording) chunks.push(event.data);
+    };
   } catch (error) {
     stream.getTracks().forEach((track) => track.stop());
     await context.close();
     throw error;
   }
   return {
+    start() {
+      if (stopped) throw Error("Recording has already stopped.");
+      recording = true;
+    },
     async stop() {
       if (stopped) return null;
       stopped = true;

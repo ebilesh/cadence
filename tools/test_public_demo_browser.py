@@ -16,6 +16,7 @@ import subprocess
 import tempfile
 from threading import Thread
 from playwright.sync_api import sync_playwright, expect
+from studio_browser_checks import check_studio
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,28 +58,30 @@ def run(site_dir, capture):
                 cdp.on('Page.screencastFrame', frame)
                 cdp.send('Page.startScreencast', {'format': 'jpeg', 'quality': 85, 'maxWidth': 1280, 'maxHeight': 900})
             panel = page.locator('.score-follower')
-            expect(panel).to_be_visible()
-            expect(panel.get_by_role('button', name='Follow MIDI', exact=True)).to_be_visible()
-            expect(panel.get_by_role('button', name='Follow microphone', exact=True)).to_be_visible()
             expect(page.locator('input[type=file]')).to_have_count(0)
             transcription=page.locator('.transcription')
             transcription.get_by_role('button',name='Try chord example',exact=True).click()
             expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes')
-            expect(transcription.locator('svg rect')).to_have_count(12)
+            expect(transcription.locator('svg .note-block')).to_have_count(12)
             transcription.get_by_role('button',name='Play detected notes',exact=True).click()
             page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .1 && !cadenceAudio.at(-1).paused")
             transcription.get_by_role('button',name='Stop notes',exact=True).click()
             assert page.evaluate('cadenceAudio.at(-1).paused')
+            page.get_by_role('button',name='Practice report',exact=True).click()
             page.get_by_role('button',name='Play reference',exact=True).click()
             page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .1 && !cadenceAudio.at(-1).paused")
             page.get_by_role('button',name='Stop playback',exact=True).click()
             assert page.evaluate('cadenceAudio.at(-1).paused')
+            page.get_by_role('button',name='Piano studio',exact=True).click()
             if capture:
                 page.screenshot(path=str(ROOT / 'docs/transcription.png'))
             with page.expect_download() as midi_download:
                 transcription.get_by_role('button',name='Export MIDI',exact=True).click()
             assert midi_download.value.suggested_filename.endswith('.mid')
+            check_studio(page, ROOT / 'docs' if capture else None)
+            page.get_by_role('button',name='Practice report',exact=True).click()
             page.get_by_role('button', name='Quick demo', exact=True).click()
+            page.get_by_role('button',name='Live following',exact=True).click()
             panel.get_by_role('button', name='Replay study', exact=True).click()
             expect(panel.locator('.follower-detail')).to_contain_text('Matched 2', timeout=5000)
             panel.get_by_role('button', name='Stop', exact=True).click()
@@ -91,9 +94,16 @@ def run(site_dir, capture):
             expect(panel.locator('.follower-state')).to_have_text('Complete', timeout=10000)
             expect(panel.locator('.follower-detail')).to_contain_text('Matched 8')
             page.wait_for_timeout(700)
+            page.get_by_role('button',name='Practice report',exact=True).click()
             with page.expect_download() as download:
                 page.get_by_role('button', name='Export report', exact=True).click()
             assert download.value.suggested_filename.endswith('.json')
+            page.get_by_role('button',name='Save practice report',exact=True).click()
+            expect(page.locator('.notice').filter(has_text='Practice report saved')).to_be_visible()
+            page.get_by_role('button',name='Saved sessions',exact=True).click()
+            expect(page.locator('.session-list')).to_contain_text('Practice report')
+            page.get_by_role('button',name='Open report',exact=True).click()
+            expect(page.locator('.session-banner')).to_contain_text('C major exercise')
             assert not api_calls, api_calls
             assert not errors, errors
             if capture:
@@ -115,17 +125,14 @@ def run(site_dir, capture):
                     context = browser.new_context(viewport={'width': 1440, 'height': 1100}, color_scheme=theme, reduced_motion='reduce')
                     page = context.new_page()
                     page.goto(url)
-                    panel = page.locator('.score-follower')
-                    panel.get_by_role('button', name='Replay study', exact=True).click()
-                    expect(panel.locator('.follower-detail')).to_contain_text('Matched 3', timeout=5000)
-                    panel.get_by_role('button', name='Stop', exact=True).click()
+                    page.get_by_role('button',name='Try chord example',exact=True).click()
+                    expect(page.locator('.note-block')).to_have_count(12)
                     page.evaluate('window.scrollTo(0,0); document.activeElement.blur()')
                     page.screenshot(path=str(ROOT / f'docs/laptop-{theme}.png'))
                     if theme == 'light':
                         page.screenshot(path=str(ROOT / 'docs/preview.jpg'), type='jpeg', quality=85)
                         page.screenshot(path=str(ROOT / 'docs/submission-preview.png'))
                     page.set_viewport_size({'width': 390, 'height': 844})
-                    panel.locator('[aria-current=step]').evaluate("element => element.scrollIntoView({block:'nearest',inline:'center',behavior:'instant'})")
                     page.evaluate('window.scrollTo(0,0); document.activeElement.blur()')
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
                     page.screenshot(path=str(ROOT / f'docs/phone-{theme}.png'), full_page=True)
@@ -140,15 +147,18 @@ def run(site_dir, capture):
             phone_panel.get_by_role('button',name='Play detected notes',exact=True).tap()
             phone_page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .2 && !cadenceAudio.at(-1).paused")
             phone_panel.get_by_role('button',name='Stop notes',exact=True).tap()
+            phone_page.get_by_role('button',name='Practice report',exact=True).tap()
             phone_page.get_by_role('button',name='Play reference',exact=True).tap()
             phone_page.wait_for_function("cadenceAudio.at(-1)?.currentTime > .2 && !cadenceAudio.at(-1).paused")
             phone_page.get_by_role('button',name='Stop playback',exact=True).tap()
+            phone_page.get_by_role('button',name='Live following',exact=True).tap()
             phone_follower=phone_page.locator('.score-follower')
             phone_follower.get_by_role('button',name='Replay study',exact=True).tap()
             expect(phone_follower.locator('.follower-detail')).to_contain_text('Matched 1',timeout=5000)
             phone_follower.get_by_role('button',name='Stop',exact=True).tap()
             assert phone_page.evaluate('cadenceAudio.at(-1).paused')
             phone_page.evaluate("() => { HTMLMediaElement.prototype.play=()=>Promise.reject(new DOMException('Blocked','NotAllowedError')); }")
+            phone_page.get_by_role('button',name='Practice report',exact=True).tap()
             phone_page.get_by_role('button',name='Play reference',exact=True).tap()
             expect(phone_page.locator('.notice').filter(has_text='Audio could not start')).to_be_visible()
             phone.close()

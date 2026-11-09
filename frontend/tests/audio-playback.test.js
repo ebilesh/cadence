@@ -108,3 +108,39 @@ test("blocked phone playback rejects clearly and frees its media URL", async (t)
   assert.equal(player.state, "closed");
   assert.equal(revoked.length, 1);
 });
+
+test("count-in audio pads the final beat and repeats only the chosen musical range", async (t) => {
+  fakeAudio(t);
+  const note = { pitch: 84, start: 1.5, duration: 0.025 };
+  const wav = renderNotesWav([note], 22050, 2);
+  assert.equal(new DataView(wav).getUint32(40, true), 2 * 22050 * 2);
+  const player = createNotePlayback([note], {
+    duration: 3,
+    start: 0,
+    loopStart: 2,
+    end: 3,
+    loop: true,
+  });
+  await player.ready;
+  assert.equal(player.element.currentTime, 0);
+  player.element.onended();
+  assert.equal(player.element.currentTime, 2);
+  assert.equal(player.state, "running");
+  player.close();
+});
+
+test("an original-audio loop beyond the recording fails clearly instead of replaying forever", async (t) => {
+  fakeAudio(t);
+  const errors = [];
+  const player = createNotePlayback(notes, {
+    start: 2,
+    end: 3,
+    loop: true,
+    onError: (error) => errors.push(error.message),
+  });
+  await player.ready;
+  player.element.duration = 1;
+  player.element.onloadedmetadata();
+  assert.equal(player.state, "closed");
+  assert.match(errors[0], /loop extends beyond/);
+});

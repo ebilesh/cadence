@@ -78,9 +78,14 @@ components:
 
 ## Overview
 
-Cadence uses a compact, green piano practice report: clear scores, note graphics, bar summaries, and practical exercises. The interface supports comparison of pitch and timing; it does not present scores as a measure of musical expression. Product context comes from README.md.
+Cadence uses an Operate-mode piano studio: a focused editor, a unified transport,
+and a session shelf. The user selected the green studio direction for the UI
+overhaul. PRODUCT.md records the audience, product facts and constraints.
 
-This is a record of the incumbent interface in frontend/src/style.css, main.jsx, and Results.jsx, including the scoped readability refinements. No new visual identity or creative metaphor is established.
+The first viewport should make the current take, playback source, save/export
+actions, and editable notes understandable. Detailed reports and live following
+live in separate workspaces. A note drag is a single reversible edit; the playhead
+and loop range explain the relationship between the sound and the notes.
 
 ## Colors
 
@@ -90,15 +95,26 @@ Green identifies actions, selected navigation, and successful notes. Neutral sur
 
 ## Typography
 
-Manrope gives headings and score values their compact weight. DM Sans carries controls, labels, and explanatory text. The headline reduces to 30px at the tablet breakpoint and 25px on small screens. Supporting report descriptions use the supporting role; individual dense chart labels remain smaller.
+Manrope gives headings and score values their compact weight. DM Sans carries controls, labels, and explanatory text. Both families are self-hosted from Fontsource so presentation does not depend on a font CDN. The headline reduces to 30px at the tablet breakpoint and 25px on small screens. Supporting report descriptions use the supporting role; individual dense chart labels remain smaller.
 
 **The Readable Report Rule.** Keep explanations readable and direct. Use plain descriptions of measured pitch and timing, and retain uncertainty labels for audio estimates.
 
 ## Layout
 
-The desktop shell uses a fixed 232px sidebar and a main area with 42px horizontal padding, capped at 1680px. The report and upload area form a flexible main column plus a 294px column, separated by the columns spacing token. Three score cards sit above the report charts.
+The desktop shell has a 220px navigation rail and a flexible main workspace with
+38px horizontal padding. A 78px icon rail replaces it below 1000px. Below 700px,
+navigation becomes a sticky top bar and main padding is 16px. Every icon retains
+an accessible name. Workspace hashes preserve the selected view on reload.
 
-At 960px the sidebar narrows to 74px, the upload column to 250px, and main padding to 23px. At 700px the sidebar disappears, main padding becomes 18px, and upload controls precede the report in a single column. Bar tiles use two columns on small screens. Preserve scrolling and interaction for the dense chart and table views.
+Piano studio presents the take name and save/export actions, followed by the
+transport, source comparison, loop/tempo controls, and the roll/staff tabs. The
+editor is the main surface; controls use flat separators rather than nested
+cards. Original and detected playback share one player. A Saved sessions list
+shows actual browser-local records, including saved practice reports.
+
+The piano roll scrolls independently on phones. Dragging a note consumes pointer
+movement while blank space allows scrolling. The grand staff is a white paper
+surface in both themes, with horizontal scrolling for dense or wide notation.
 
 ## Elevation & Depth
 
@@ -114,7 +130,7 @@ Primary buttons use the action color with white text. Secondary buttons use a wh
 
 File selectors are labeled dashed upload targets backed by real file inputs. Input mode is a three-way segmented control with an explicit selected state. Active navigation uses a pale green surface in light mode and a darker green surface in dark mode.
 
-Scores, timeline, piano overlay, bar heatmap, note table, and exercises remain the report's primary visual content. Selected notes and bars retain their focus/selection treatments. Decorative session art, demo waves, and numbered exercise ornaments are hidden by the scoped refinement.
+The report workspace retains scores, timeline, piano overlay, bar heatmap, note table, and exercises. Selected notes and bars retain their focus/selection treatments. Decorative session art, demo waves, and numbered exercise ornaments are hidden by the scoped refinement.
 
 ## Do's and Don'ts
 

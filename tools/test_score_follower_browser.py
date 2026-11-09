@@ -69,6 +69,7 @@ def run():
                 errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
                 page.goto('http://127.0.0.1:5173/')
+                page.get_by_role('button',name='Live following',exact=True).click()
                 panel = page.locator('.score-follower')
                 expect(panel.get_by_role('heading', name='Score follower')).to_be_visible()
                 panel.get_by_role('button', name='Next attack', exact=True).click()
@@ -137,13 +138,14 @@ def run():
                     panel.scroll_into_view_if_needed()
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), label
                     page.screenshot(path=str(Path(tempfile.gettempdir()) / f'cadence-follower-{label}.png'), full_page=True)
+                page.get_by_role('button',name='Piano studio',exact=True).click()
                 transcription = page.locator('.transcription')
                 transcription.get_by_label('Upload piano recording').set_input_files(str(ROOT / 'samples/chords.wav'))
                 expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes', timeout=30000)
-                transcription.locator('svg rect').first.click()
+                transcription.locator('svg .note-block').first.click()
                 transcription.get_by_label('Detected note pitch').fill('61')
                 transcription.get_by_role('button', name='Apply correction', exact=True).click()
-                expect(transcription.locator('svg rect').first).to_have_attribute('aria-label', 'Edit note 1: C♯4, 0.01 seconds')
+                expect(transcription.locator('svg .note-block').first).to_have_attribute('aria-label', 'Edit note 1: C♯4, 0.01 seconds')
                 with page.expect_download() as download:
                     transcription.get_by_role('button', name='Export MIDI', exact=True).click()
                 with tempfile.TemporaryDirectory() as folder:
@@ -155,7 +157,37 @@ def run():
                 transcription.get_by_role('button', name='Add missing note', exact=True).click()
                 expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes')
                 transcription.get_by_role('button', name='Undo all edits', exact=True).click()
-                expect(transcription.locator('svg rect').first).to_have_attribute('aria-label', 'Edit note 1: C4, 0.01 seconds')
+                expect(transcription.locator('svg .note-block').first).to_have_attribute('aria-label', 'Edit note 1: C4, 0.01 seconds')
+                # Recording is armed explicitly; count-in finishes before PCM capture.
+                page.evaluate("""() => {navigator.mediaDevices.getUserMedia=async()=>{
+                  window.testAudio=new AudioContext();await testAudio.resume();
+                  window.testTone=testAudio.createOscillator();testTone.frequency.value=440;
+                  const gain=testAudio.createGain();gain.gain.value=.3;
+                  window.testDestination=testAudio.createMediaStreamDestination();
+                  testTone.connect(gain);gain.connect(testDestination);testTone.start();
+                  return testDestination.stream;
+                };}""")
+                transcription.get_by_label('Practice tempo').fill('240')
+                transcription.get_by_label('Count-in beats').select_option('4')
+                transcription.get_by_role('button',name='Enable microphone',exact=True).click()
+                transcription.get_by_role('button',name='Record take with count-in',exact=True).click(timeout=5000)
+                expect(transcription.locator('.studio-recorder')).to_contain_text('Four beats')
+                expect(transcription.locator('.studio-recorder')).to_contain_text('Recording · stops after',timeout=10000)
+                page.wait_for_timeout(1000)
+                with page.expect_response(lambda response:'/api/transcribe' in response.url and response.request.method=='POST') as recorded_response:
+                    transcription.get_by_role('button',name='Stop & transcribe',exact=True).click()
+                recorded=recorded_response.value.json()
+                assert recorded_response.value.status==200,recorded
+                assert .5<recorded['duration']<1.7,recorded['duration']
+                assert len(recorded['notes'])>0
+                assert page.evaluate("testDestination.stream.getTracks().every(t=>t.readyState==='ended')")
+                page.evaluate('testTone.stop();testAudio.close()')
+                # Leaving the workspace releases an armed microphone too.
+                transcription.get_by_role('button',name='Enable microphone',exact=True).click()
+                expect(transcription.get_by_role('button',name='Record take',exact=True)).to_be_visible()
+                page.get_by_role('button',name='Live following',exact=True).click()
+                assert page.evaluate("testDestination.stream.getTracks().every(t=>t.readyState==='ended')")
+                page.evaluate('testTone.stop();testAudio.close()')
                 assert not errors, errors
                 browser.close()
                 print('PASS: replay, pause, reload, backend restart, completion recovery, live MIDI, synthetic microphone, stream cleanup, reference upload, piano transcription, note correction, MIDI roundtrip, desktop/mobile layout')

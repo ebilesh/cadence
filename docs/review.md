@@ -1,7 +1,7 @@
 # Checks and limits
 
-The score-follower revision passed 52 backend tests with two private-recording
-skips on Python 3.12, 23 frontend tests, and the production build. The browser
+The current application passed 52 backend tests with two private-recording
+skips on Python 3.12, 33 frontend tests, and the production build. The browser
 suite exercised synthetic MIDI and microphone streams, cleanup, reference upload,
 page reload, and an actual backend process restart. Synthetic inputs do not
 establish accuracy on physical hardware. Additional regressions cover device
@@ -42,3 +42,14 @@ gesture, media-session routing when available, blocked-play errors, cleanup,
 and switching players. Chromium browser tests exercise all three buttons with
 an iPhone viewport/user agent and touch input, checking that decoded audio time
 advances. This is browser emulation, not a physical iPhone speaker test.
+
+
+The green studio overhaul adds regression checks for immutable undo/redo,
+loop clipping and slowed timing, count-in duration, metronome accents, drag bounds,
+bar/voice completeness, cross-bar ties, report/session storage, and invalid source
+ranges. Browser checks exercise original comparison, speed, repeated loops,
+actual pointer dragging, staff rendering, IndexedDB autosave/reload/open/delete,
+report reopening, and deferred microphone recording after count-in. The recorded
+WAV is passed through the real transcription endpoint. Browser emulation and
+synthetic input do not establish physical device behavior or transcription
+accuracy on real pianos. Saved sessions are device-local, not cloud backup.

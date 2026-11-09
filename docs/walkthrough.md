@@ -1,8 +1,17 @@
 # Demonstrating Cadence
 
-Start the saved demo with `python demo_server.py`. Explain the task: compare a short piano take with a reference and decide which bars to repeat.
+Start the saved demo with `python demo_server.py`. The initial Piano studio is a
+focused editing and practice workspace. Open Try chord example, compare Original
+audio with Detected notes, drag a note, then Undo/Redo the correction. Loop a short
+range at 50% speed. Try the metronome and count-in, switch to Sheet music, and
+explain the explicit 4/4/eighth-note assumption. Save a named session, reload, and
+open Saved sessions to demonstrate recovery. Practice reports can be saved there
+too. Live following and Practice report are separate navigation entries.
 
-1. In **Score follower**, click **Replay study**. The eight-chord reference plays
+For the existing report walkthrough, first open Practice report. Explain the
+task: compare a short piano take with a reference and decide which bars to repeat.
+
+1. Open **Live following**. In **Score follower**, click **Replay study**. The eight-chord reference plays
    in the browser and the current attack moves as its pitch set is matched.
 2. Click **Stop** after a few attacks, reload the page, then click **Replay from
    here**. The score and musical position restore; devices never reconnect
@@ -13,7 +22,7 @@ Start the saved demo with `python demo_server.py`. Explain the task: compare a s
 4. Choose **Follow MIDI** to use a keyboard, or **Follow microphone** to follow
    one top note at a time. Microphone following estimates C3–C6 and needs a release
    between repeated notes. This is not polyphonic microphone transcription.
-5. In the saved report below, play the reference and select a flagged note.
+5. Open **Practice report**. In the saved report, play the reference and select a flagged note.
    Explain its pitch and timing separately. Open a flagged bar in the heatmap,
    follow it into the note table, and read its practice exercise.
 6. Export the report. The report is saved Python output; reference uploads and
