@@ -157,3 +157,67 @@ For public hosting I would add authentication, an analysis queue, shared rate li
 Next I want to test real piano recordings with labeled note errors, align chords as groups, handle pickups better, and compare tempo fitting with chroma DTW. I would add progress history only after checking the analysis against real playing.
 
 I used the [pretty_midi docs](https://craffel.github.io/pretty-midi/), [librosa pYIN docs](https://librosa.org/doc/0.11.0/generated/librosa.pyin.html). Code and original samples use the MIT license.
+
+## Cadence Score Follower
+
+The **Score follower** above the report follows attacks while you play. Start the
+backend and development frontend as described above. **Load reference MIDI**
+selects your score; **Use demo study** restores the included eight-chord study.
+**Replay study** synthesizes the reference in the browser and feeds its chord
+attacks through the same follower used by live input. Replay works without the
+Python server; loading a new reference uses `/api/reference`.
+
+- **Follow MIDI** uses Web MIDI in Chrome or Edge on localhost/HTTPS. Note-on
+  events from all connected inputs are grouped in a 65 ms window. Connecting or
+  disconnecting a keyboard updates the listener. Stop removes the listeners.
+- **Follow microphone** estimates one pitch locally with a normalized-difference
+  pitch detector. Play only the highest note of each chord, between C3 and C6.
+  Release between repeated notes. Audio stays in the browser. This is not
+  polyphonic audio transcription; chords, pedal, noise and quiet attacks may
+  prevent reliable following.
+- **Stop** pauses input and releases resources. **Start again** resets progress.
+  Click an attack to resume from that position. The score and checkpoint are
+  saved in local storage after each input. Reloads and backend restarts restore
+  the position in a paused state; permissions and active streams never resume
+  automatically. Storage failures are shown; a corrupt or incompatible checkpoint
+  starts safely at the beginning. Browser storage is local to that browser/profile.
+
+The follower compares exact MIDI pitches as sets. A Jaccard overlap of at least
+60% accepts an attack; up to three skipped attacks are allowed. A skip penalty
+prefers nearby repetitions. Wrong inputs leave the position unchanged. Repeated
+passages remain ambiguous, octave transpositions are not automatically corrected
+in live following, and gaps longer than three attacks require selecting a new
+position manually. The displayed counts describe follower alignment, not a
+validated musical proficiency score.
+
+Uploaded MIDI analysis now groups attacks within 65 ms of each group's first
+onset, aligns the groups in order, and uses minimum-cost one-to-one pitch
+assignment within each chord. Rolled voice order no longer forces wrong-note
+matches. Missing, extra, and wrong tones retain separate counts. Existing
+monophonic reports and saved demo scores retain their previous behavior.
+
+### Follower accuracy and recovery checks
+
+`python -m pytest backend -q` includes rolled chords with tempo changes, missing,
+extra and wrong chord tones, duplicate voices, and non-transitive onset grouping.
+`npm test` in `frontend` includes 8/8 reordered demo chords, rejection of wrong
+pitches, missed-attack recovery, restart checkpoints, invalid storage, MIDI
+hotplug/cleanup, and 22 generated pitch cases across two sample rates. These are
+synthetic regression checks, not accuracy claims for real piano recordings.
+
+For the browser suite, stop any servers using ports 8000 and 5173, then run:
+
+```sh
+python -m pip install -r tools/requirements-browser.txt
+python -m playwright install chromium
+python tools/test_score_follower_browser.py
+```
+
+The script starts and stops its own backend/frontend, exercises audible replay,
+pause, page reload, backend restart, completion recovery, synthetic MIDI and
+microphone streams, stream cleanup, reference upload, and desktop/mobile layout.
+It uses `.venv/bin/python` when present, otherwise the current Python interpreter.
+Set `CHROMIUM_PATH` to an installed Chromium if needed. Screenshots are written
+to the system temporary directory. GitHub Actions runs this suite alongside the
+backend tests and frontend tests/build. Physical microphone and keyboard testing
+remain a manual check.

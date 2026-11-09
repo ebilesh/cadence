@@ -190,7 +190,7 @@ def read_audio(path: Path) -> dict:
     )
 
 
-def align(
+def _align_notes(
     r: list[Note], p: list[Note], rt: np.ndarray, pt: np.ndarray
 ) -> tuple[list[tuple[int, int]], list[int], list[int]]:
     n, m = len(r), len(p)
@@ -228,6 +228,68 @@ def align(
             extra.append(j - 1)
             j -= 1
     return sorted(pairs), sorted(missing), sorted(extra)
+
+
+def onset_groups(notes: list[Note], tolerance: float = 0.065) -> list[list[int]]:
+    """Group attacks against the first onset, avoiding transitive chord merging."""
+    groups: list[list[int]] = []
+    for index in sorted(range(len(notes)), key=lambda i: notes[i]["start"]):
+        if not groups or notes[index]["start"] - notes[groups[-1][0]]["start"] > tolerance:
+            groups.append([])
+        groups[-1].append(index)
+    return groups
+
+
+def align(r: list[Note], p: list[Note], rt: np.ndarray, pt: np.ndarray
+          ) -> tuple[list[tuple[int, int]], list[int], list[int]]:
+    """Align chord attacks in order, assigning voices without note-order constraints.
+
+    MIDI chords may be rolled by up to 65 ms. Within an attack a minimum-cost
+    assignment preserves one-to-one note matches, including duplicate pitches.
+    Monophonic passages retain the original alignment and scoring behavior.
+    """
+    from scipy.optimize import linear_sum_assignment
+
+    rg, pg = onset_groups(r), onset_groups(p)
+    if all(len(g) == 1 for g in rg + pg):
+        return _align_notes(r, p, rt, pt)
+
+    def assignment(a, b):
+        n, m = len(a), len(b)
+        matrix = np.zeros((n + m, n + m))
+        matrix[:n, :m] = [[
+            min(abs(r[i]["pitch"] - p[j]["pitch"]) * .65, 1.5)
+            + min(abs(rt[i] - pt[j]) / .3, 2) for j in b] for i in a]
+        matrix[:n, m:] = 1.2
+        matrix[n:, :m] = 1.2
+        rows, cols = linear_sum_assignment(matrix)
+        pairs = [(a[i], b[j]) for i, j in zip(rows, cols) if i < n and j < m]
+        return float(matrix[rows, cols].sum()), pairs
+
+    n, m = len(rg), len(pg)
+    cost = np.full((n + 1, m + 1), np.inf)
+    cost[0, 0] = 0
+    step = {}
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i < n and cost[i, j] + 1.2 * len(rg[i]) < cost[i + 1, j]:
+                cost[i + 1, j] = cost[i, j] + 1.2 * len(rg[i])
+                step[i + 1, j] = (i, j, [])
+            if j < m and cost[i, j] + 1.2 * len(pg[j]) < cost[i, j + 1]:
+                cost[i, j + 1] = cost[i, j] + 1.2 * len(pg[j])
+                step[i, j + 1] = (i, j, [])
+            if i < n and j < m:
+                value, pairs = assignment(rg[i], pg[j])
+                if cost[i, j] + value <= cost[i + 1, j + 1]:
+                    cost[i + 1, j + 1] = cost[i, j] + value
+                    step[i + 1, j + 1] = (i, j, pairs)
+    pairs = []
+    i, j = n, m
+    while i or j:
+        i, j, matched = step[i, j]
+        pairs.extend(matched)
+    used_r, used_p = {i for i, _ in pairs}, {j for _, j in pairs}
+    return sorted(pairs), sorted(set(range(len(r))) - used_r), sorted(set(range(len(p))) - used_p)
 
 
 def fit_tempo(
