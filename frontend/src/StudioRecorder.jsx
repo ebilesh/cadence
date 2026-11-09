@@ -16,7 +16,8 @@ export default function StudioRecorder({
     recorder = useRef(null),
     clicks = useRef(null),
     timer = useRef(null),
-    generation = useRef(0);
+    generation = useRef(0),
+    recordedBpm = useRef(bpm);
   const release = () => {
     generation.current++;
     clearTimeout(timer.current);
@@ -105,6 +106,7 @@ export default function StudioRecorder({
           void handle.stop();
           return;
         }
+        recordedBpm.current = bpm;
         handle.start();
         setStatus("recording");
         timer.current = setTimeout(finish, 59000);
@@ -137,7 +139,7 @@ export default function StudioRecorder({
     recorder.current = null;
     release();
     setStatus("idle");
-    if (file) onRecorded(file);
+    if (file) onRecorded(file, recordedBpm.current);
   }
   const cancel = () => {
     release();

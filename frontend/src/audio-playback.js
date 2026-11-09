@@ -1,3 +1,4 @@
+import { pianoSample } from "./piano-samples.js";
 import { encodeWav } from "./capture.js";
 
 export const AUDIO_HELP =
@@ -6,7 +7,12 @@ let activePlayback = null;
 
 // Render small practice passages to PCM, then use the phone's media playback
 // route. This does not require a running/unlocked Web Audio context for sound.
-export function renderNotesWav(notes, sampleRate = 22050, minimumDuration = 0) {
+export function renderNotesWav(
+  notes,
+  sampleRate = 22050,
+  minimumDuration = 0,
+  instrument = "grand",
+) {
   if (
     !Number.isFinite(minimumDuration) ||
     minimumDuration < 0 ||
@@ -41,6 +47,13 @@ export function renderNotesWav(notes, sampleRate = 22050, minimumDuration = 0) {
       frames = Math.ceil((note.duration + 0.05) * sampleRate);
     const step = (440 * 2 ** ((note.pitch - 69) / 12)) / sampleRate,
       decay = Math.exp(-2 / (Math.max(note.duration, 0.2) * sampleRate));
+    const sample =
+      instrument === "grand" && note.instrument !== "click"
+        ? pianoSample(note.pitch)
+        : null;
+    const sampleStep = sample
+      ? (sample.rate / sampleRate) * 2 ** ((note.pitch - sample.pitch) / 12)
+      : 0;
     let phase = 0,
       gain = 0.18;
     for (let i = 0; i < frames && first + i < length; i++) {
@@ -48,7 +61,22 @@ export function renderNotesWav(notes, sampleRate = 22050, minimumDuration = 0) {
         envelope =
           Math.min(1, t / 0.008) *
           Math.max(0, Math.min(1, (note.duration + 0.05 - t) / 0.05));
-      samples[first + i] += (4 * Math.abs(phase - 0.5) - 1) * gain * envelope;
+      let value;
+      if (note.instrument === "click") {
+        // A short unpitched tick, with no high/low note at the loop seam.
+        value =
+          ((Math.sin(i * 127.1) * 43758.5453) % 1) * Math.exp(-t * 220) * 0.22;
+      } else if (sample) {
+        const position = i * sampleStep,
+          index = Math.floor(position),
+          fraction = position - index;
+        value =
+          ((sample.samples[index] || 0) * (1 - fraction) +
+            (sample.samples[index + 1] || 0) * fraction) *
+          0.65 *
+          envelope;
+      } else value = (4 * Math.abs(phase - 0.5) - 1) * gain * envelope;
+      samples[first + i] += value;
       phase = (phase + step) % 1;
       gain *= decay;
     }
@@ -60,13 +88,166 @@ export function renderNotesWav(notes, sampleRate = 22050, minimumDuration = 0) {
   return encodeWav([samples], sampleRate);
 }
 
-export function createNotePlayback(notes, options = {}) {
-  return createMediaPlayback(
-    new Blob([renderNotesWav(notes, 22050, options.duration || 0)], {
-      type: "audio/wav",
-    }),
-    options,
+// Cut our own PCM WAV at exact sample boundaries. A short edge fade prevents
+// a held note from producing a discontinuity at the wrap; no release tail is
+// added to the period itself.
+export function slicePlaybackWav(wav, start, end) {
+  const input = new DataView(wav),
+    rate = input.getUint32(24, true);
+  const first = Math.round(start * rate),
+    last = Math.round(end * rate),
+    available = input.getUint32(40, true) / 2;
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    first < 0 ||
+    last <= first ||
+    last > available
+  )
+    throw Error("Choose a valid loop within the recording.");
+  const out = new ArrayBuffer(44 + (last - first) * 2),
+    bytes = new Uint8Array(out);
+  bytes.set(new Uint8Array(wav, 0, 44));
+  bytes.set(new Uint8Array(wav, 44 + first * 2, (last - first) * 2), 44);
+  const view = new DataView(out);
+  view.setUint32(4, out.byteLength - 8, true);
+  view.setUint32(40, out.byteLength - 44, true);
+  const fade = Math.min(
+    Math.round(rate * 0.002),
+    Math.floor((last - first) / 2),
   );
+  for (let i = 0; i < fade; i++)
+    for (const frame of [i, last - first - 1 - i])
+      view.setInt16(
+        44 + frame * 2,
+        Math.round((view.getInt16(44 + frame * 2, true) * i) / fade),
+        true,
+      );
+  return out;
+}
+
+function playbackRoute() {
+  const session = globalThis.navigator?.audioSession;
+  let previous,
+    changed = false;
+  try {
+    previous = session?.type;
+    if (session && previous !== "play-and-record") {
+      session.type = "playback";
+      changed = true;
+    }
+  } catch {}
+  return () => {
+    try {
+      if (changed && session.type === "playback") session.type = previous;
+    } catch {}
+  };
+}
+
+export function createNotePlayback(notes, options = {}) {
+  const wav = renderNotesWav(
+    notes,
+    22050,
+    Math.max(options.duration || 0, options.end || 0),
+    options.instrument,
+  );
+  if (!options.loop)
+    return createMediaPlayback(new Blob([wav], { type: "audio/wav" }), options);
+  const rate = new DataView(wav).getUint32(24, true),
+    start = options.start || 0;
+  const bodyStart = options.loopStart ?? start,
+    end = options.end ?? options.duration ?? (wav.byteLength - 44) / 2 / rate;
+  const body = slicePlaybackWav(wav, bodyStart, end);
+  const callbacks = {
+    onEnded: options.onEnded || (() => {}),
+    onStop: options.onStop || (() => {}),
+    onError: options.onError || (() => {}),
+    onTick: options.onTick || (() => {}),
+  };
+  if (bodyStart === start)
+    return createMediaPlayback(new Blob([body], { type: "audio/wav" }), {
+      ...options,
+      start: 0,
+      loopStart: 0,
+      end: null,
+      loop: true,
+      onTick: (time) => callbacks.onTick(bodyStart + time),
+    });
+  // Prime both media elements within the tap. The loop plays silently during
+  // the one-time count-in, then becomes audible without another play request.
+  const intro = slicePlaybackWav(wav, start, bodyStart);
+  activePlayback?.close();
+  const restore = playbackRoute();
+  let closed = false,
+    introDone = false,
+    bodyPlayer,
+    introPlayer;
+  const cleanup = () => {
+    if (closed) return false;
+    closed = true;
+    bodyPlayer?.close();
+    introPlayer?.close();
+    restore();
+    if (activePlayback === group) activePlayback = null;
+    return true;
+  };
+  const fail = (error) => {
+    if (cleanup()) callbacks.onError(error);
+  };
+  const group = {
+    get element() {
+      return bodyPlayer.element;
+    },
+    get state() {
+      return closed ? "closed" : "running";
+    },
+    close() {
+      if (cleanup()) callbacks.onStop();
+    },
+  };
+  activePlayback = group;
+  try {
+    bodyPlayer = createMediaPlayback(new Blob([body], { type: "audio/wav" }), {
+      exclusive: false,
+      manageSession: false,
+      muted: true,
+      start: 0,
+      loopStart: 0,
+      end: null,
+      loop: true,
+      onError: fail,
+      onTick: (time) => {
+        if (introDone) callbacks.onTick(bodyStart + time);
+      },
+    });
+    introPlayer = createMediaPlayback(
+      new Blob([intro], { type: "audio/wav" }),
+      {
+        exclusive: false,
+        manageSession: false,
+        onError: fail,
+        onTick: (time) => callbacks.onTick(start + time),
+        onEnded: () => {
+          if (!closed) {
+            introDone = true;
+            bodyPlayer.element.currentTime = 0;
+            bodyPlayer.element.muted = false;
+            callbacks.onTick(bodyStart + bodyPlayer.element.currentTime);
+          }
+        },
+      },
+    );
+    group.ready = Promise.all([bodyPlayer.ready, introPlayer.ready])
+      .then(() => undefined)
+      .catch((error) => {
+        cleanup();
+        throw error;
+      });
+    return group;
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
 }
 
 export function createMediaPlayback(
@@ -81,14 +262,17 @@ export function createMediaPlayback(
     end = null,
     loop = false,
     rate = 1,
+    exclusive = true,
+    manageSession = true,
+    muted = false,
   } = {},
 ) {
   if (
     !Number.isFinite(start) ||
     start < 0 ||
     !Number.isFinite(rate) ||
-    rate < 0.25 ||
-    rate > 2 ||
+    rate < 0.025 ||
+    rate > 12 ||
     (end !== null && (!Number.isFinite(end) || end <= start)) ||
     (loopStart !== null &&
       (!Number.isFinite(loopStart) ||
@@ -96,24 +280,22 @@ export function createMediaPlayback(
         (end !== null && loopStart >= end)))
   )
     throw Error("Choose a valid playback range and speed.");
-  activePlayback?.close();
-  // Newer iOS versions expose an explicit media session route. Audio elements
-  // remain the compatibility path when that API is absent or read-only.
-  const session = globalThis.navigator?.audioSession;
-  let previousType,
-    changedSession = false;
-  try {
-    previousType = session?.type;
-    if (session && previousType !== "play-and-record") {
-      session.type = "playback";
-      changedSession = true;
-    }
-  } catch {}
+  if (exclusive) activePlayback?.close();
   const element = new Audio();
+  try {
+    element.defaultPlaybackRate = rate;
+    element.playbackRate = rate;
+  } catch {
+    throw Error(
+      "This browser cannot play original audio at that tempo. Choose a speed closer to 100% or use detected notes.",
+    );
+  }
+  const restoreSession = manageSession ? playbackRoute() : () => {};
   element.preload = "auto";
   element.playsInline = true;
   element.setAttribute("playsinline", "");
   element.volume = 1;
+  element.muted = muted;
   const owned = source instanceof Blob;
   const url = owned ? URL.createObjectURL(source) : source;
   element.src = url;
@@ -134,10 +316,7 @@ export function createMediaPlayback(
     element.removeAttribute("src");
     element.load();
     if (owned) URL.revokeObjectURL(url);
-    try {
-      if (changedSession && session.type === "playback")
-        session.type = previousType;
-    } catch {}
+    restoreSession();
     if (activePlayback === playback) activePlayback = null;
     return true;
   };
@@ -150,7 +329,7 @@ export function createMediaPlayback(
       if (cleanup()) onStop();
     },
   };
-  activePlayback = playback;
+  if (exclusive) activePlayback = playback;
   const seekStart = () => {
     try {
       if (

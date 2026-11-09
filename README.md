@@ -28,10 +28,20 @@ Use the navigation rail (top bar on phones) to move between **Piano studio**,
 
 - **Compare what you played with what AI heard.** Switch between Original audio
   and Detected notes. Change speed from 25% to 200%; original audio preserves
-  pitch where supported by the browser.
+  pitch where supported by the browser. Practice tempo scales note starts and
+  lengths as well as metronome beats. Set Original tempo to match the recording
+  (uploads default to 100 BPM; this is not automatic tempo detection). Speed
+  multiplies that tempo ratio. The notation grid uses Original tempo.
+- **Choose a sound.** Grand piano uses bundled Salamander samples by Alexander
+  Holm ([CC BY 3.0](frontend/public/licenses/Salamander-CC-BY-3.0.txt)); Soft synth
+  remains available. Samples load in the background, with synth fallback until
+  ready. This changes app playback; exported MIDI uses your player's instrument.
 - **Practice a section.** Set From/To times, enable Loop section, and slow it
   down. A four-beat count-in plays once before the musical passage. Enable the
   metronome for detected-note playback, or use Metronome only on its own.
+  Detected-note loops repeat an exact PCM segment through the browser's native
+  loop. With metronome enabled, the last beat completes before repeating; a
+  partial beat is padded with silence. The metronome uses unpitched ticks.
 - **Edit with confidence.** Drag a note left/right for timing and up/down for
   pitch. Arrow keys nudge the focused note. The form sets exact pitch, start and
   duration. Add/delete notes; Undo and Redo keep the last 50 edits reversible.
@@ -43,7 +53,7 @@ Use the navigation rail (top bar on phones) to move between **Piano studio**,
 - **Keep a report.** In Practice report choose Save practice report. Open it later
   from the same session shelf, or use Export report for a portable JSON copy.
 - **Read the staff.** Sheet music renders a grand staff with rests, accidentals
-  and ties. Set the tempo first. The view assumes 4/4 and quantizes to eighth
+  and ties. Set Original tempo first. The view assumes 4/4 and quantizes to eighth
   notes; it is an editable practice aid through the piano roll, not a verified
   score. Four bars are shown per page.
 - **Record a new take in the full app.** Enable microphone, choose a tempo and

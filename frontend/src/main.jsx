@@ -1,3 +1,5 @@
+import { loadPianoSamples } from "./piano-samples.js";
+loadPianoSamples().catch(() => {});
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {

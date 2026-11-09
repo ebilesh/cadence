@@ -38,7 +38,7 @@ test("loop clipping and slow playback preserve pitches and count-in timing", () 
       { pitch: 60, start: 0.5, duration: 1 },
       { pitch: 67, start: 1.5, duration: 1 },
     ],
-    { start: 1, end: 2, speed: 0.5, bpm: 120, countIn: 4 },
+    { start: 1, end: 2, speed: 0.5, bpm: 120, baseBpm: 120, countIn: 4 },
   );
   assert.equal(p.lead, 4);
   assert.equal(p.duration, 6);
@@ -121,4 +121,40 @@ test("a repeated pitch is rearticulated rather than tied to an older overlapping
   const repeated = staff.segments.find((segment) => segment.at === 2);
   assert.deepEqual(repeated.pitches, [60]);
   assert.deepEqual(repeated.continuing, []);
+});
+
+test("practice BPM scales note onsets, lengths, and loop period together", () => {
+  const notes = [{ pitch: 60, start: 0.5, duration: 1 }];
+  const normal = practiceNotes(notes, { end: 2, bpm: 100 });
+  const slow = practiceNotes(notes, { end: 2, bpm: 50 });
+  const fast = practiceNotes(notes, { end: 2, bpm: 200 });
+  assert.equal(slow.notes[0].start, normal.notes[0].start * 2);
+  assert.equal(slow.notes[0].duration, normal.notes[0].duration * 2);
+  assert.equal(fast.duration, normal.duration / 2);
+  assert.equal(fast.notes[0].pitch, 60);
+  const combined = practiceNotes(notes, { end: 2, bpm: 200, speed: 0.5 });
+  assert.equal(combined.duration, normal.duration);
+});
+test("loop seam has one full beat of spacing and no click at its endpoint", () => {
+  for (const bpm of [40, 100, 120, 240]) {
+    const p = practiceNotes([note], {
+      end: 1.31,
+      bpm,
+      metronome: true,
+      loop: true,
+      countIn: 4,
+    });
+    const clicks = p.notes.filter(
+      (n) => n.instrument === "click" && n.start >= p.lead,
+    );
+    const beat = 60 / bpm;
+    assert.ok(Math.abs(p.duration - clicks.at(-1).start - beat) < 1e-9);
+    assert.ok(clicks.every((n) => n.start < p.duration));
+    assert.equal(
+      p.notes.filter((n) => n.instrument === "click" && n.start === p.lead)
+        .length,
+      1,
+    );
+    assert.equal(p.notes.filter((n) => n.instrument !== "click").length, 1);
+  }
 });

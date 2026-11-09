@@ -1,3 +1,4 @@
+import { loadPianoSamples } from "./piano-samples.js";
 import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Upload,
@@ -43,6 +44,8 @@ const SheetMusic = lazy(() => import("./SheetMusic.jsx"));
 const defaults = {
   speed: 1,
   bpm: 100,
+  baseBpm: 100,
+  instrument: "grand",
   countIn: 0,
   metronome: false,
   loop: false,
@@ -92,6 +95,20 @@ export default function Transcription({
     current = useRef(null),
     saveTimer = useRef(null),
     writeVersion = useRef(0);
+  const [pianoStatus, setPianoStatus] = useState("loading");
+  useEffect(() => {
+    let alive = true;
+    loadPianoSamples()
+      .then(() => {
+        if (alive) setPianoStatus("ready");
+      })
+      .catch(() => {
+        if (alive) setPianoStatus("unavailable");
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const notes = history.present;
   const stop = () => {
     audio.current?.close();
@@ -264,7 +281,7 @@ export default function Transcription({
       showError(e);
     }
   }
-  function setData(data, name, blob) {
+  function setData(data, name, blob, baseBpm = 100) {
     validateNotes(data.notes);
     generation.current++;
     writeVersion.current++;
@@ -281,6 +298,8 @@ export default function Transcription({
     setSource("notes");
     setPrefs({
       ...defaults,
+      baseBpm,
+      bpm: baseBpm,
       end: Math.min(
         60,
         Math.max(...data.notes.map((n) => n.start + n.duration)),
@@ -303,7 +322,7 @@ export default function Transcription({
       }
     }
   }
-  async function uploadFile(file) {
+  async function uploadFile(file, recordedBpm = 100) {
     if (!file) return;
     request.current?.abort();
     const controller = new AbortController();
@@ -333,7 +352,7 @@ export default function Transcription({
         token === generation.current &&
         !controller.signal.aborted
       )
-        setData(data, file.name, file);
+        setData(data, file.name, file, recordedBpm);
     } catch (e) {
       if (mounted.current && e.name !== "AbortError")
         setError(
@@ -443,7 +462,7 @@ export default function Transcription({
           start: range.start,
           end: range.end,
           loop: prefs.loop,
-          rate: prefs.speed,
+          rate: (prefs.speed * prefs.bpm) / prefs.baseBpm,
           onTick: (time) => updateProgress(time),
         });
       } else {
@@ -453,13 +472,18 @@ export default function Transcription({
         player = createNotePlayback(prepared.notes, {
           ...callbacks,
           duration: prepared.duration,
+          instrument: prefs.instrument,
           loop: prefs.loop,
           start: 0,
           loopStart: prepared.lead,
           end: prepared.duration,
           onTick: (t) =>
             updateProgress(
-              range.start + Math.max(0, t - prepared.lead) * prefs.speed,
+              Math.min(
+                range.end,
+                range.start +
+                  Math.max(0, t - prepared.lead) * prepared.playbackSpeed,
+              ),
             ),
         });
         // Count-in plays once; subsequent loops restart at the musical passage.
@@ -819,6 +843,24 @@ export default function Transcription({
               s
             </span>
             <label>
+              Sound
+              <select
+                aria-label="Playback instrument"
+                value={prefs.instrument}
+                onChange={(e) => updatePrefs({ instrument: e.target.value })}
+              >
+                <option value="grand">
+                  Grand piano
+                  {pianoStatus === "loading"
+                    ? " (loading…)"
+                    : pianoStatus === "unavailable"
+                      ? " (synth fallback)"
+                      : ""}
+                </option>
+                <option value="synth">Soft synth</option>
+              </select>
+            </label>
+            <label>
               Speed
               <select
                 aria-label="Playback speed"
@@ -869,6 +911,20 @@ export default function Transcription({
               />
             </label>
             <label>
+              Original tempo
+              <input
+                aria-label="Original tempo"
+                type="number"
+                min="40"
+                max="240"
+                value={prefs.baseBpm}
+                onChange={(e) =>
+                  updatePrefs({ baseBpm: Number(e.target.value) })
+                }
+              />
+              <span>BPM</span>
+            </label>
+            <label>
               Tempo
               <input
                 aria-label="Practice tempo"
@@ -909,6 +965,21 @@ export default function Transcription({
               {playing ? "Stop metronome" : "Metronome only"}
             </button>
           </div>
+          <p className="transcription-limit">
+            Original tempo is a timing guide, initially 100 BPM; set it to your
+            recording’s tempo. Practice tempo and speed change note timing
+            together. Grand piano samples by{" "}
+            <a href="https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html">
+              Alexander Holm
+            </a>{" "}
+            (<a href="/licenses/Salamander-CC-BY-3.0.txt">CC BY 3.0</a>).
+          </p>
+          {prefs.loop && prefs.metronome && source === "notes" && (
+            <p className="transcription-limit">
+              The metronome completes the last beat before repeating the
+              selected section.
+            </p>
+          )}
           {source === "original" && (
             <p className="transcription-limit">
               Original playback preserves pitch where supported. Metronome and
@@ -983,7 +1054,10 @@ export default function Transcription({
             <Suspense fallback={<p role="status">Preparing score…</p>}>
               <SheetMusic
                 notes={notes}
-                bpm={Math.max(40, Math.min(240, Math.round(prefs.bpm || 100)))}
+                bpm={Math.max(
+                  40,
+                  Math.min(240, Math.round(prefs.baseBpm || 100)),
+                )}
               />
             </Suspense>
           ) : (

@@ -48,8 +48,10 @@ export function practiceNotes(
     end = 60,
     speed = 1,
     bpm = 100,
+    baseBpm = 100,
     countIn = 0,
     metronome = false,
+    loop = false,
   } = {},
 ) {
   if (
@@ -64,36 +66,53 @@ export function practiceNotes(
     !Number.isInteger(bpm) ||
     bpm < 40 ||
     bpm > 240 ||
+    !Number.isInteger(baseBpm) ||
+    baseBpm < 40 ||
+    baseBpm > 240 ||
     ![0, 4].includes(countIn)
   )
     throw Error(
       "Choose a valid loop, 25–200% speed, and tempo between 40 and 240 BPM.",
     );
+  const playbackSpeed = (speed * bpm) / baseBpm;
   const beat = 60 / bpm / speed,
     lead = countIn * beat;
+  const selectedDuration = (end - start) / playbackSpeed;
+  const beatCount = Math.max(1, Math.ceil(selectedDuration / beat - 1e-9));
+  const musicalDuration =
+    loop && metronome ? beatCount * beat : selectedDuration;
   const clipped = notes
     .filter((n) => n.start < end && n.start + n.duration > start)
     .map((n) => ({
       ...n,
-      start: lead + (Math.max(n.start, start) - start) / speed,
+      start: lead + (Math.max(n.start, start) - start) / playbackSpeed,
       duration:
         (Math.min(n.start + n.duration, end) - Math.max(n.start, start)) /
-        speed,
+        playbackSpeed,
     }));
   const clicks = [];
   for (let i = 0; i < countIn; i++)
-    clicks.push({ pitch: i === 0 ? 96 : 84, start: i * beat, duration: 0.025 });
+    clicks.push({
+      pitch: i === 0 ? 96 : 84,
+      start: i * beat,
+      duration: 0.025,
+      instrument: "click",
+    });
   if (metronome)
-    for (let i = 0; i * beat < (end - start) / speed; i++)
+    for (let i = 0; i < beatCount; i++)
       clicks.push({
         pitch: i % 4 === 0 ? 96 : 84,
         start: lead + i * beat,
         duration: 0.025,
+        instrument: "click",
       });
   return {
     notes: [...clipped, ...clicks],
     lead,
-    duration: lead + (end - start) / speed,
+    duration: lead + musicalDuration,
+    selectedDuration,
+    playbackSpeed,
+    padded: musicalDuration - selectedDuration > 1e-6,
   };
 }
 export function metronomeNotes(bpm, bars = 4) {
@@ -110,6 +129,7 @@ export function metronomeNotes(bpm, bars = 4) {
     pitch: i % 4 === 0 ? 96 : 84,
     start: (i * 60) / bpm,
     duration: 0.025,
+    instrument: "click",
   }));
 }
 

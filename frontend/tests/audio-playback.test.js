@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   renderNotesWav,
   createNotePlayback,
+  createMediaPlayback,
+  slicePlaybackWav,
   AUDIO_HELP,
 } from "../src/audio-playback.js";
 const notes = [
@@ -38,6 +40,13 @@ function fakeAudio(t, { reject = false } = {}) {
       elements.push(this);
       this.currentTime = 0;
       this.paused = true;
+    }
+    set src(value) {
+      this._src = value;
+      this.playbackRate = this.defaultPlaybackRate ?? 1;
+    }
+    get src() {
+      return this._src;
     }
     setAttribute() {}
     removeAttribute() {
@@ -110,7 +119,7 @@ test("blocked phone playback rejects clearly and frees its media URL", async (t)
 });
 
 test("count-in audio pads the final beat and repeats only the chosen musical range", async (t) => {
-  fakeAudio(t);
+  const { elements, revoked } = fakeAudio(t);
   const note = { pitch: 84, start: 1.5, duration: 0.025 };
   const wav = renderNotesWav([note], 22050, 2);
   assert.equal(new DataView(wav).getUint32(40, true), 2 * 22050 * 2);
@@ -121,18 +130,25 @@ test("count-in audio pads the final beat and repeats only the chosen musical ran
     end: 3,
     loop: true,
   });
+  t.after(() => player.close());
   await player.ready;
-  assert.equal(player.element.currentTime, 0);
-  player.element.onended();
-  assert.equal(player.element.currentTime, 2);
+  assert.equal(elements.length, 2);
+  assert.equal(player.element.loop, true);
+  assert.equal(player.element.muted, true);
+  elements[1].onended();
+  assert.equal(player.element.muted, false);
+  assert.equal(elements[1].paused, true);
   assert.equal(player.state, "running");
+  assert.equal(navigator.audioSession.type, "playback");
   player.close();
+  assert.equal(revoked.length, 2);
+  assert.equal(navigator.audioSession.type, "auto");
 });
 
 test("an original-audio loop beyond the recording fails clearly instead of replaying forever", async (t) => {
   fakeAudio(t);
   const errors = [];
-  const player = createNotePlayback(notes, {
+  const player = createMediaPlayback(new Blob(["original"]), {
     start: 2,
     end: 3,
     loop: true,
@@ -143,4 +159,47 @@ test("an original-audio loop beyond the recording fails clearly instead of repla
   player.element.onloadedmetadata();
   assert.equal(player.state, "closed");
   assert.match(errors[0], /loop extends beyond/);
+});
+
+test("loop WAV has an exact period, no appended release tail, and quiet edges", () => {
+  const wav = renderNotesWav([{ pitch: 60, start: 0, duration: 2 }]);
+  const loop = slicePlaybackWav(wav, 0.2, 0.8),
+    view = new DataView(loop);
+  assert.equal(view.getUint32(40, true), Math.round(0.6 * 22050) * 2);
+  assert.equal(view.getInt16(44, true), 0);
+  assert.equal(view.getInt16(loop.byteLength - 2, true), 0);
+  assert.throws(() => slicePlaybackWav(wav, 3, 4));
+});
+test("loops use native repeat without seeking the original timeline", async (t) => {
+  fakeAudio(t);
+  const player = createNotePlayback(notes, { duration: 1, loop: true, end: 1 });
+  t.after(() => player.close());
+  await player.ready;
+  assert.equal(player.element.loop, true);
+  assert.equal(player.element.currentTime, 0);
+});
+
+test("a blocked count-in closes both elements and restores phone routing", async (t) => {
+  const { elements, revoked } = fakeAudio(t, { reject: true });
+  const player = createNotePlayback(notes, {
+    duration: 3,
+    loopStart: 2,
+    end: 3,
+    loop: true,
+  });
+  t.after(() => player.close());
+  await assert.rejects(player.ready);
+  assert.equal(elements.length, 2);
+  assert.ok(elements.every((element) => element.paused));
+  assert.equal(revoked.length, 2);
+  assert.equal(navigator.audioSession.type, "auto");
+});
+
+test("original audio keeps its selected speed when the source loads", async (t) => {
+  fakeAudio(t);
+  const player = createMediaPlayback(new Blob(["original"]), { rate: 0.5 });
+  t.after(() => player.close());
+  await player.ready;
+  assert.equal(player.element.playbackRate, 0.5);
+  assert.equal(player.element.defaultPlaybackRate, 0.5);
 });

@@ -209,6 +209,9 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+.studio-transport select[aria-label="Playback instrument"] {
+  width: 168px;
+}
 .studio-practice-controls {
   display: flex;
   gap: 14px;
