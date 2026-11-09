@@ -27,6 +27,7 @@ import {
   startMidiCapture,
 } from "./capture.js";
 
+const DEMO_ONLY = import.meta.env.MODE === "demo";
 const API = import.meta.env.VITE_API_URL || "";
 const demoReference = demo.notes.map((n) => ({
   pitch: n.pitch,
@@ -104,6 +105,12 @@ function App() {
     [],
   );
   async function runDemo() {
+    if (DEMO_ONLY) {
+      setResult(demo);
+      setSelected(null);
+      setNotice("");
+      return;
+    }
     setBusy(true);
     setError("");
     setNotice("");
@@ -321,7 +328,9 @@ function App() {
 
   return (
     <div className="shell">
-      <a className="skip-link" href="#practice">Skip to practice report</a>
+      <a className="skip-link" href="#practice">
+        Skip to practice report
+      </a>
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-icon">
@@ -410,14 +419,22 @@ function App() {
             Export report
           </button>
         </div>
-        <ScoreFollowerPanel />
+        {DEMO_ONLY && (
+          <div className="notice" role="note">
+            Sample report: a C major exercise with deliberate pitch and timing
+            errors. Explore the notes, play the reference, or download the
+            report.
+          </div>
+        )}
+        <ScoreFollowerPanel demoOnly={DEMO_ONLY} />
         {info && (
           <div className="notice">
             Cadence compares your take with a MIDI reference using sequence
             alignment. Timing is measured after removing start delay and overall
             tempo differences. MIDI supports chords; audio estimates one pitch
             per onset and works best with single-note passages. Bar numbers come
-            from the reference MIDI. Practice exercises follow the measured errors.
+            from the reference MIDI. Practice exercises follow the measured
+            errors.
           </div>
         )}
         {notice && (
@@ -504,190 +521,217 @@ function App() {
             )}
           </div>
           <aside className="upload-column">
-            <section className="card upload-card">
-              <div className="card-heading">
-                <div>
-                  <h3>Analyze a take</h3>
-                  <p>Choose files or record here.</p>
-                </div>
-                <span className="upload-icon">
-                  <Upload size={18} />
-                </span>
-              </div>
-              <div className="input-switch">
-                {[
-                  ["midi", Piano, "MIDI"],
-                  ["audio", Mic, "Audio"],
-                  ["live", Cable, "Keyboard"],
-                ].map(([key, Icon, label]) => (
-                  <button
-                    key={key}
-                    disabled={recording || busy || connecting}
-                    aria-pressed={mode === key}
-                    className={mode === key ? "selected" : ""}
-                    onClick={() => {
-                      setMode(key);
-                      setPerformance(null);
-                      setError("");
-                    }}
-                  >
-                    <Icon size={15} />
-                    {label}
-                  </button>
-                ))}
-              </div>
-              {mode === "live" ? (
-                <div className="live-panel">
-                  <div className="connection-icon">
-                    <Cable size={28} />
+            {DEMO_ONLY ? (
+              <section className="card upload-card">
+                <div className="card-heading">
+                  <div>
+                    <h3>Try the report</h3>
+                    <p>
+                      Select a note to inspect its pitch and timing. Select a
+                      bar to find the notes worth repeating.
+                    </p>
                   </div>
-                  <h4>{midiDevice || "Connect your keyboard"}</h4>
-                  <p>
-                    Play the demo exercise, or select your own reference MIDI
-                    below. Stop recording to analyze the captured notes.
-                  </p>
-                  <label className="dropzone">
-                    <Music2 size={18} />
-                    <strong>
-                      {reference?.name || "Optional reference MIDI"}
-                    </strong>
-                    <small>No file selected: use the demo</small>
-                    <input
-                      aria-label="Keyboard reference MIDI"
-                      type="file"
-                      accept=".mid,.midi"
+                </div>
+                <p className="audio-note">
+                  This demo shows saved analysis. To compare your own MIDI or
+                  audio recordings, run Cadence locally.
+                </p>
+                <a
+                  className="button primary full"
+                  href="https://github.com/ebilesh/cadence#run-real-analysis"
+                >
+                  Analyze your own take
+                </a>
+                <a
+                  className="text-button"
+                  href="https://github.com/ebilesh/cadence/blob/main/docs/architecture.md"
+                >
+                  Read the scoring method <ArrowUpRight size={16} />
+                </a>
+              </section>
+            ) : (
+              <section className="card upload-card">
+                <div className="card-heading">
+                  <div>
+                    <h3>Analyze a take</h3>
+                    <p>Choose files or record here.</p>
+                  </div>
+                  <span className="upload-icon">
+                    <Upload size={18} />
+                  </span>
+                </div>
+                <div className="input-switch">
+                  {[
+                    ["midi", Piano, "MIDI"],
+                    ["audio", Mic, "Audio"],
+                    ["live", Cable, "Keyboard"],
+                  ].map(([key, Icon, label]) => (
+                    <button
+                      key={key}
                       disabled={recording || busy || connecting}
-                      onChange={(e) => setReference(e.target.files[0])}
-                    />
-                  </label>
-                  <button
-                    className="button secondary full"
-                    onClick={connectMidi}
-                    disabled={recording || busy || connecting}
-                  >
-                    {connecting
-                      ? "Waiting for MIDI permission..."
-                      : "Connect MIDI keyboard"}
-                  </button>
-                  {midiDevice && (
+                      aria-pressed={mode === key}
+                      className={mode === key ? "selected" : ""}
+                      onClick={() => {
+                        setMode(key);
+                        setPerformance(null);
+                        setError("");
+                      }}
+                    >
+                      <Icon size={15} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {mode === "live" ? (
+                  <div className="live-panel">
+                    <div className="connection-icon">
+                      <Cable size={28} />
+                    </div>
+                    <h4>{midiDevice || "Connect your keyboard"}</h4>
+                    <p>
+                      Play the demo exercise, or select your own reference MIDI
+                      below. Stop recording to analyze the captured notes.
+                    </p>
+                    <label className="dropzone">
+                      <Music2 size={18} />
+                      <strong>
+                        {reference?.name || "Optional reference MIDI"}
+                      </strong>
+                      <small>No file selected: use the demo</small>
+                      <input
+                        aria-label="Keyboard reference MIDI"
+                        type="file"
+                        accept=".mid,.midi"
+                        disabled={recording || busy || connecting}
+                        onChange={(e) => setReference(e.target.files[0])}
+                      />
+                    </label>
+                    <button
+                      className="button secondary full"
+                      onClick={connectMidi}
+                      disabled={recording || busy || connecting}
+                    >
+                      {connecting
+                        ? "Waiting for MIDI permission..."
+                        : "Connect MIDI keyboard"}
+                    </button>
+                    {midiDevice && (
+                      <button
+                        className="button primary full"
+                        disabled={busy || connecting}
+                        onClick={toggleMidi}
+                      >
+                        {recording ? <Square size={15} /> : <Play size={15} />}{" "}
+                        {recording
+                          ? `Stop & analyze (${captureCount} notes)`
+                          : "Record a take"}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={analyzeUpload}>
+                    <label className="field-label">
+                      01 <span>Reference score</span>
+                      <small>MIDI</small>
+                    </label>
+                    <label className="dropzone">
+                      <Music2 size={21} />
+                      <strong>
+                        {reference?.name || "Choose a reference MIDI"}
+                      </strong>
+                      <small>.mid or .midi</small>
+                      <input
+                        type="file"
+                        aria-label="Reference MIDI"
+                        disabled={busy || recording || connecting}
+                        accept=".mid,.midi"
+                        onChange={(e) => setReference(e.target.files[0])}
+                      />
+                    </label>
+                    <label className="field-label">
+                      02 <span>Your performance</span>
+                      <small>{mode === "midi" ? "MIDI" : "AUDIO"}</small>
+                    </label>
+                    <label className="dropzone">
+                      <Upload size={21} />
+                      <strong>
+                        {performance?.name ||
+                          `Choose ${mode === "midi" ? "your MIDI take" : "an audio recording"}`}
+                      </strong>
+                      <small>
+                        {mode === "midi"
+                          ? ".mid or .midi"
+                          : ".wav, .flac or .ogg"}{" "}
+                        · max 20 MB
+                      </small>
+                      <input
+                        type="file"
+                        key={mode}
+                        aria-label="Performance file"
+                        disabled={busy || recording || connecting}
+                        accept={
+                          mode === "midi" ? ".mid,.midi" : ".wav,.flac,.ogg"
+                        }
+                        onChange={(e) => setPerformance(e.target.files[0])}
+                      />
+                    </label>
+                    {mode === "audio" && (
+                      <button
+                        type="button"
+                        disabled={busy || connecting}
+                        className={
+                          "record-button " + (recording ? "is-recording" : "")
+                        }
+                        onClick={recordAudio}
+                      >
+                        {recording ? <Square size={14} /> : <Mic size={14} />}{" "}
+                        {recording
+                          ? "Stop recording"
+                          : connecting
+                            ? "Waiting for microphone permission..."
+                            : "Record microphone"}
+                      </button>
+                    )}
                     <button
                       className="button primary full"
-                      disabled={busy || connecting}
-                      onClick={toggleMidi}
-                    >
-                      {recording ? <Square size={15} /> : <Play size={15} />}{" "}
-                      {recording
-                        ? `Stop & analyze (${captureCount} notes)`
-                        : "Record a take"}
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <form onSubmit={analyzeUpload}>
-                  <label className="field-label">
-                    01 <span>Reference score</span>
-                    <small>MIDI</small>
-                  </label>
-                  <label className="dropzone">
-                    <Music2 size={21} />
-                    <strong>
-                      {reference?.name || "Choose a reference MIDI"}
-                    </strong>
-                    <small>.mid or .midi</small>
-                    <input
-                      type="file"
-                      aria-label="Reference MIDI"
                       disabled={busy || recording || connecting}
-                      accept=".mid,.midi"
-                      onChange={(e) => setReference(e.target.files[0])}
-                    />
-                  </label>
-                  <label className="field-label">
-                    02 <span>Your performance</span>
-                    <small>{mode === "midi" ? "MIDI" : "AUDIO"}</small>
-                  </label>
-                  <label className="dropzone">
-                    <Upload size={21} />
-                    <strong>
-                      {performance?.name ||
-                        `Choose ${mode === "midi" ? "your MIDI take" : "an audio recording"}`}
-                    </strong>
-                    <small>
-                      {mode === "midi"
-                        ? ".mid or .midi"
-                        : ".wav, .flac or .ogg"}{" "}
-                      · max 20 MB
-                    </small>
-                    <input
-                      type="file"
-                      key={mode}
-                      aria-label="Performance file"
-                      disabled={busy || recording || connecting}
-                      accept={
-                        mode === "midi" ? ".mid,.midi" : ".wav,.flac,.ogg"
-                      }
-                      onChange={(e) => setPerformance(e.target.files[0])}
-                    />
-                  </label>
-                  {mode === "audio" && (
-                    <button
-                      type="button"
-                      disabled={busy || connecting}
-                      className={
-                        "record-button " + (recording ? "is-recording" : "")
-                      }
-                      onClick={recordAudio}
+                      type="submit"
                     >
-                      {recording ? <Square size={14} /> : <Mic size={14} />}{" "}
-                      {recording
-                        ? "Stop recording"
-                        : connecting
-                          ? "Waiting for microphone permission..."
-                          : "Record microphone"}
+                      {busy ? "Analyzing..." : "Analyze performance"}
+                      {!busy && <ArrowUpRight size={17} />}
                     </button>
-                  )}
-                  <button
-                    className="button primary full"
-                    disabled={busy || recording || connecting}
-                    type="submit"
-                  >
-                    {busy ? "Analyzing..." : "Analyze performance"}
-                    {!busy && <ArrowUpRight size={17} />}
-                  </button>
-                </form>
-              )}
-              {error && (
-                <div role="alert" className="error">
-                  {error}
+                  </form>
+                )}
+                {error && (
+                  <div role="alert" className="error">
+                    {error}
+                  </div>
+                )}
+                <div className="privacy-note">
+                  <Check size={13} />
+                  <span>Files are deleted after analysis.</span>
                 </div>
-              )}
-              <div className="privacy-note">
-                <Check size={13} />
-                <span>
-                  Files are deleted after analysis.
-
-                </span>
-              </div>
-              <div className="sample-downloads">
-                <span>SAMPLE FILES</span>
-                <a href="/samples/reference.mid" download>
-                  Reference MIDI
-                </a>
-                <a href="/samples/performance.mid" download>
-                  MIDI take
-                </a>
-                <a href="/samples/performance.wav" download>
-                  Audio take
-                </a>
-              </div>
-              {mode === "audio" && (
-                <p className="audio-note">
-                  Audio results are estimates. Use single-note passages in a
-                  quiet room. Chords or pedal can confuse pitch tracking.
-                  Maximum length: 2 minutes.
-                </p>
-              )}
-            </section>
+                <div className="sample-downloads">
+                  <span>SAMPLE FILES</span>
+                  <a href="/samples/reference.mid" download>
+                    Reference MIDI
+                  </a>
+                  <a href="/samples/performance.mid" download>
+                    MIDI take
+                  </a>
+                  <a href="/samples/performance.wav" download>
+                    Audio take
+                  </a>
+                </div>
+                {mode === "audio" && (
+                  <p className="audio-note">
+                    Audio results are estimates. Use single-note passages in a
+                    quiet room. Chords or pedal can confuse pitch tracking.
+                    Maximum length: 2 minutes.
+                  </p>
+                )}
+              </section>
+            )}
             <section className="demo-card">
               <h3>Quick demo</h3>
               <p>

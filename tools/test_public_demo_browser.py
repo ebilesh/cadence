@@ -1,0 +1,129 @@
+"""Validate the static public demo; optionally refresh screenshots and recordings.
+
+Build first: npm run build
+Check: python tools/test_public_demo_browser.py
+Capture: python tools/test_public_demo_browser.py --site-dir demo --capture-media
+Requires Playwright/Chromium; media capture also requires ffmpeg.
+"""
+import argparse
+import base64
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+from threading import Thread
+from playwright.sync_api import sync_playwright, expect
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, *_args):
+        pass
+
+
+def run(site_dir, capture):
+    if not (site_dir / 'index.html').is_file():
+        raise SystemExit('Build the static demo first with npm run build.')
+    if capture and not shutil.which('ffmpeg'):
+        raise SystemExit('Media capture needs ffmpeg.')
+    server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(site_dir)))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    url = f'http://127.0.0.1:{server.server_port}'
+    try:
+        with tempfile.TemporaryDirectory() as temp, sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=os.getenv('CHROMIUM_PATH') or shutil.which('chromium'), headless=True, args=['--no-sandbox'])
+            options = {'viewport': {'width': 1280, 'height': 900}, 'color_scheme': 'light', 'reduced_motion': 'reduce'}
+            context = browser.new_context(**options)
+            page = context.new_page()
+            api_calls, errors = [], []
+            page.on('request', lambda request: api_calls.append(request.url) if '/api/' in request.url else None)
+            page.on('pageerror', lambda error: errors.append(str(error)))
+            page.goto(url)
+            frames = []
+            if capture:
+                cdp = context.new_cdp_session(page)
+                def frame(event):
+                    path = Path(temp) / f'frame-{len(frames):05d}.jpg'
+                    path.write_bytes(base64.b64decode(event['data']))
+                    frames.append((path, event['metadata']['timestamp']))
+                    cdp.send('Page.screencastFrameAck', {'sessionId': event['sessionId']})
+                cdp.on('Page.screencastFrame', frame)
+                cdp.send('Page.startScreencast', {'format': 'jpeg', 'quality': 85, 'maxWidth': 1280, 'maxHeight': 900})
+            panel = page.locator('.score-follower')
+            expect(panel).to_be_visible()
+            expect(panel.get_by_role('button', name='Follow MIDI', exact=True)).to_be_visible()
+            expect(panel.get_by_role('button', name='Follow microphone', exact=True)).to_be_visible()
+            expect(page.locator('input[type=file]')).to_have_count(0)
+            page.get_by_role('button', name='Quick demo', exact=True).click()
+            panel.get_by_role('button', name='Replay study', exact=True).click()
+            expect(panel.locator('.follower-detail')).to_contain_text('Matched 2', timeout=5000)
+            panel.get_by_role('button', name='Stop', exact=True).click()
+            checkpoint = page.evaluate("JSON.parse(localStorage.getItem('cadence-follower-v1')).checkpoint.position")
+            assert checkpoint >= 1
+            page.wait_for_timeout(500)
+            page.reload()
+            expect(panel.locator('.follower-status')).to_contain_text('Position restored')
+            panel.get_by_role('button', name='Replay from here', exact=True).click()
+            expect(panel.locator('.follower-state')).to_have_text('Complete', timeout=10000)
+            expect(panel.locator('.follower-detail')).to_contain_text('Matched 8')
+            page.wait_for_timeout(700)
+            with page.expect_download() as download:
+                page.get_by_role('button', name='Export report', exact=True).click()
+            assert download.value.suggested_filename.endswith('.json')
+            assert not api_calls, api_calls
+            assert not errors, errors
+            if capture:
+                cdp.send('Page.stopScreencast')
+            context.close()
+            if capture:
+                assert len(frames) > 1, 'No browser frames captured'
+                source = Path(temp) / 'frames.txt'
+                entries = []
+                for index, (path, timestamp) in enumerate(frames):
+                    duration = max(.01, frames[index + 1][1] - timestamp) if index + 1 < len(frames) else 1
+                    entries.extend([f"file '{path}'", f'duration {duration:.5f}'])
+                entries.append(f"file '{frames[-1][0]}'")
+                source.write_text('\n'.join(entries) + '\n')
+                subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', str(source), '-an', '-c:v', 'libx264', '-crf', '28', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(ROOT / 'docs/score-follower-demo.mp4')], check=True)
+                subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', str(source), '-filter_complex', 'fps=8,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3', '-loop', '0', str(ROOT / 'docs/score-follower-demo.gif')], check=True)
+                # Separate contexts keep screenshot state independent of the recording.
+                for theme in ['light', 'dark']:
+                    context = browser.new_context(viewport={'width': 1440, 'height': 1100}, color_scheme=theme, reduced_motion='reduce')
+                    page = context.new_page()
+                    page.goto(url)
+                    panel = page.locator('.score-follower')
+                    panel.get_by_role('button', name='Replay study', exact=True).click()
+                    expect(panel.locator('.follower-detail')).to_contain_text('Matched 3', timeout=5000)
+                    panel.get_by_role('button', name='Stop', exact=True).click()
+                    page.evaluate('window.scrollTo(0,0); document.activeElement.blur()')
+                    page.screenshot(path=str(ROOT / f'docs/laptop-{theme}.png'))
+                    if theme == 'light':
+                        page.screenshot(path=str(ROOT / 'docs/preview.jpg'), type='jpeg', quality=85)
+                        page.screenshot(path=str(ROOT / 'docs/submission-preview.png'))
+                    page.set_viewport_size({'width': 390, 'height': 844})
+                    panel.locator('[aria-current=step]').evaluate("element => element.scrollIntoView({block:'nearest',inline:'center',behavior:'instant'})")
+                    page.evaluate('window.scrollTo(0,0); document.activeElement.blur()')
+                    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+                    page.screenshot(path=str(ROOT / f'docs/phone-{theme}.png'), full_page=True)
+                    context.close()
+            browser.close()
+            print('PASS: public demo needs no API; replay, reload recovery, JSON export, live-input controls, and upload isolation work.')
+            if capture:
+                print('Updated desktop/mobile light/dark screenshots, preview images, and silent MP4/GIF replay recording.')
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--site-dir', default='frontend/dist')
+    parser.add_argument('--capture-media', action='store_true')
+    args = parser.parse_args()
+    run((ROOT / args.site_dir).resolve(), args.capture_media)

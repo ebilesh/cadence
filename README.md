@@ -1,10 +1,25 @@
 # Cadence
 
+[Open the live sample report](https://cadence-piano.cadence-deployment.workers.dev)
+
 I built Cadence to compare a piano take with a MIDI reference and find the bars I should practice again. I use React for the report, FastAPI for uploads, pretty_midi for MIDI, and librosa for audio. The app checks pitch and timing. It does not grade musical expression.
 
 ![Cadence practice report](docs/preview.jpg)
 
 [Architecture and scoring decisions](docs/architecture.md) · [Demo walkthrough](docs/walkthrough.md) · [Checks and limits](docs/review.md)
+
+### Watch the score follower
+
+The silent recording shows replay, pause, a page reload, and recovery to the next
+attack. The public demo keeps MIDI and microphone following in the browser;
+reference uploads and full performance analysis require the local app.
+
+![Score follower replay, pause, reload and recovery](docs/score-follower-demo.gif)
+
+[Download the MP4](docs/score-follower-demo.mp4) ·
+[Desktop light](docs/laptop-light.png) · [Desktop dark](docs/laptop-dark.png) ·
+[Mobile light](docs/phone-light.png) · [Mobile dark](docs/phone-dark.png)
+
 
 ## Quick demo, without installs
 
@@ -17,6 +32,10 @@ python demo_server.py
 Open **http://127.0.0.1:5173**. Python 3 is the only requirement for this preview. Click **Quick demo**, **Play reference**, a note in the timeline, or a bar in the heatmap. **Export report** downloads the report as JSON. **Clear results** shows the empty state. The moon/sun button changes the theme.
 
 The demo report is saved output from `backend/analysis.py`, with rule suggestions from `backend/recommendations.py`. The frontend does not make up scores. A test compares the saved JSON with a fresh Python result. The demo server serves that saved report; it does not analyze uploads. Stop it with Ctrl+C before starting the development frontend on the same port.
+
+## Host the demo
+
+The saved report can run on Cloudflare Workers as a free static site. The public build clearly labels sample data and links to the local app for real uploads. See [Cloudflare deployment](docs/cloudflare.md).
 
 ## Run real analysis
 

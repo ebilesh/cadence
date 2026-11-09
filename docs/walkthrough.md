@@ -2,10 +2,47 @@
 
 Start the saved demo with `python demo_server.py`. Explain the task: compare a short piano take with a reference and decide which bars to repeat.
 
-1. Play the reference, then select a flagged note. Explain its pitch and timing separately.
-2. Open a flagged bar in the heatmap. Follow it into the note table.
-3. Read its practice exercise and the counts that selected it.
-4. Export the report. Explain that this is saved analysis output; uploads require the full Python backend.
+1. In **Score follower**, click **Replay study**. The eight-chord reference plays
+   in the browser and the current attack moves as its pitch set is matched.
+2. Click **Stop** after a few attacks, reload the page, then click **Replay from
+   here**. The score and musical position restore; devices never reconnect
+   automatically. Replay reaches **Complete** with eight matched attacks.
+3. Choose **Follow MIDI** to use a keyboard, or **Follow microphone** to follow
+   one top note at a time. Microphone following estimates C3–C6 and needs a release
+   between repeated notes. This is not polyphonic microphone transcription.
+4. In the saved report below, play the reference and select a flagged note.
+   Explain its pitch and timing separately. Open a flagged bar in the heatmap,
+   follow it into the note table, and read its practice exercise.
+5. Export the report. The report is saved Python output; reference uploads and
+   analysis of new takes require the full Python backend. Replay and live
+   following work without an API and do not upload audio.
+
+[Silent replay and recovery recording](score-follower-demo.mp4) ·
+[Animated preview](score-follower-demo.gif)
+
+## Refresh the presentation media
+
+From the repository root, with Node, Python, Playwright, Chromium, and FFmpeg
+installed:
+
+```sh
+npm ci
+npm run build
+python tools/update_demo.py
+python tools/test_public_demo_browser.py --site-dir demo --capture-media
+```
+
+The script serves the real static build on an automatically selected local port,
+checks that it sends no API requests, then records replay, pause, reload,
+recovery and completion. It uses Chromium's screencast protocol and the installed
+FFmpeg, so video capture needs no Playwright FFmpeg download. It writes a silent
+MP4 and GIF plus 1440px desktop and 390px mobile screenshots in both themes.
+Screenshots pause after the third matched attack and use a fresh browser context
+for each theme. No mock scores or image overlays are added.
+
+The README preview and submission image show the same current light desktop
+view. See [desktop light](laptop-light.png), [desktop dark](laptop-dark.png),
+[mobile light](phone-light.png), and [mobile dark](phone-dark.png).
 
 ## Technical decisions to explain
 
