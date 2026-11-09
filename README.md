@@ -21,6 +21,10 @@ reference uploads and full performance analysis require the local app.
 [Mobile light](docs/phone-light.png) · [Mobile dark](docs/phone-dark.png)
 
 
+The bottom-left credit shows the app version and Git build revision (in the
+footer on smaller screens). `/version.json` identifies the deployed build.
+The page and version file revalidate on refresh to help pick up deployments.
+
 ## Piano studio
 
 Use the navigation rail (top bar on phones) to move between **Piano studio**,

@@ -1,3 +1,4 @@
+import BuildCredit from "./BuildCredit.jsx";
 import { loadPianoSamples } from "./piano-samples.js";
 loadPianoSamples().catch(() => {});
 import React, { useEffect, useRef, useState } from "react";
@@ -449,6 +450,7 @@ function App() {
           >
             <CircleHelp size={15} /> How it works
           </button>
+          <BuildCredit />
         </div>
       </aside>
       <main id="practice">
@@ -881,7 +883,10 @@ function App() {
           </div>
         </div>
         <footer>
-          <span>Cadence</span>
+          <span className="footer-brand">Cadence</span>
+          <div className="footer-credits">
+            <BuildCredit />
+          </div>
           <span>Your piano. Your pace.</span>
         </footer>
       </main>

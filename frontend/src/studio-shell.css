@@ -207,3 +207,32 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.build-credit {
+  display: grid;
+  gap: 5px;
+  color: var(--studio-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+.build-credit small {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.sidebar-bottom .build-credit {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--studio-line);
+}
+.studio-shell .footer-credits {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .studio-shell .footer-credits {
+    display: block;
+  }
+  .studio-shell .footer-brand {
+    display: none;
+  }
+}

@@ -47,6 +47,11 @@ def run(site_dir, capture):
             page.on('request', lambda request: api_calls.append(request.url) if '/api/' in request.url else None)
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(url)
+            build = context.request.get(url + '/version.json').json()
+            credit = page.locator('.sidebar .build-credit')
+            expect(credit).to_be_visible()
+            expect(credit).to_contain_text('Made by Abhilash Kalyan · 2026')
+            expect(credit).to_contain_text(f"v{build['version']} · {build['revision']}")
             frames = []
             if capture:
                 cdp = context.new_cdp_session(page)
@@ -142,6 +147,9 @@ def run(site_dir, capture):
               window.Audio=function(...args){const audio=new OriginalAudio(...args);cadenceAudio.push(audio);return audio;};""")
             phone_page=phone.new_page()
             phone_page.goto(url)
+            phone_credit = phone_page.locator('footer .build-credit')
+            expect(phone_credit).to_be_visible()
+            expect(phone_credit).to_contain_text(f"v{build['version']} · {build['revision']}")
             phone_panel=phone_page.locator('.transcription')
             phone_panel.get_by_role('button',name='Try chord example',exact=True).tap()
             phone_panel.get_by_role('button',name='Play detected notes',exact=True).tap()
