@@ -201,6 +201,11 @@ export function createNotePlayback(notes, options = {}) {
     get state() {
       return closed ? "closed" : "running";
     },
+    setRate(rate) {
+      if (closed) return;
+      bodyPlayer.setRate(rate);
+      introPlayer.setRate(rate);
+    },
     close() {
       if (cleanup()) callbacks.onStop();
     },
@@ -324,6 +329,13 @@ export function createMediaPlayback(
     element,
     get state() {
       return closed ? "closed" : "running";
+    },
+    setRate(value) {
+      if (closed) return;
+      if (!Number.isFinite(value) || value < 0.025 || value > 12)
+        throw Error("Choose a tempo closer to the current playback speed.");
+      element.defaultPlaybackRate = value;
+      element.playbackRate = value;
     },
     close() {
       if (cleanup()) onStop();

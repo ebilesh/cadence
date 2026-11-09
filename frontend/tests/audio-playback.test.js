@@ -203,3 +203,36 @@ test("original audio keeps its selected speed when the source loads", async (t) 
   assert.equal(player.element.playbackRate, 0.5);
   assert.equal(player.element.defaultPlaybackRate, 0.5);
 });
+
+test("live tempo changes keep the same audio element, position, and phone route", async (t) => {
+  const { elements } = fakeAudio(t);
+  const player = createNotePlayback(notes, { duration: 2, loop: true, end: 2 });
+  t.after(() => player.close());
+  await player.ready;
+  player.element.currentTime = 0.4;
+  player.setRate(0.5);
+  assert.equal(elements.length, 1);
+  assert.equal(player.element.currentTime, 0.4);
+  assert.equal(player.element.paused, false);
+  assert.equal(player.element.playbackRate, 0.5);
+  assert.equal(player.element.preservesPitch, true);
+  player.setRate(2);
+  assert.equal(player.element.playbackRate, 2);
+  assert.equal(navigator.audioSession.type, "playback");
+});
+test("live count-in tempo changes apply to both count-in and repeated passage", async (t) => {
+  const { elements } = fakeAudio(t);
+  const player = createNotePlayback(notes, {
+    duration: 3,
+    loop: true,
+    loopStart: 2,
+    end: 3,
+  });
+  t.after(() => player.close());
+  await player.ready;
+  player.setRate(0.5);
+  assert.ok(elements.every((element) => element.playbackRate === 0.5));
+  elements[1].onended();
+  assert.equal(player.element.playbackRate, 0.5);
+  assert.equal(player.element.muted, false);
+});

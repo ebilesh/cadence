@@ -31,7 +31,8 @@ Use the navigation rail (top bar on phones) to move between **Piano studio**,
   pitch where supported by the browser. Practice tempo scales note starts and
   lengths as well as metronome beats. Set Original tempo to match the recording
   (uploads default to 100 BPM; this is not automatic tempo detection). Speed
-  multiplies that tempo ratio. The notation grid uses Original tempo.
+  multiplies that tempo ratio. Tempo and speed changes take effect while playing,
+  without stopping or restarting the passage. The notation grid uses Original tempo.
 - **Choose a sound.** Grand piano uses bundled Salamander samples by Alexander
   Holm ([CC BY 3.0](frontend/public/licenses/Salamander-CC-BY-3.0.txt)); Soft synth
   remains available. Samples load in the background, with synth fallback until

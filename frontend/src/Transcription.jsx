@@ -419,8 +419,33 @@ export default function Transcription({
     }
   }
   function updatePrefs(change) {
-    stop();
-    setPrefs((p) => ({ ...p, ...change }));
+    const next = { ...prefs, ...change };
+    const tempoChange = Object.keys(change).every((key) =>
+      ["bpm", "speed"].includes(key),
+    );
+    const player = audio.current;
+    if (tempoChange && player?.state === "running" && player.tempo) {
+      // Keep playing while a number field is temporarily empty during typing.
+      if (
+        Number.isInteger(next.bpm) &&
+        next.bpm >= 40 &&
+        next.bpm <= 240 &&
+        next.speed >= 0.25 &&
+        next.speed <= 2
+      ) {
+        const target = (next.bpm * next.speed) / next.baseBpm;
+        const rate = player.tempo.original
+          ? target
+          : target / player.tempo.renderedSpeed;
+        try {
+          player.setRate(rate);
+          setError("");
+        } catch (error) {
+          showError(error);
+        }
+      }
+    } else stop();
+    setPrefs(next);
   }
   const updateProgress = (time) =>
     setProgress((previous) => {
@@ -488,6 +513,10 @@ export default function Transcription({
         });
         // Count-in plays once; subsequent loops restart at the musical passage.
       }
+      player.tempo = {
+        original: source === "original",
+        renderedSpeed: (prefs.speed * prefs.bpm) / prefs.baseBpm,
+      };
       audio.current = player;
       await player.ready;
       if (
@@ -509,10 +538,15 @@ export default function Transcription({
     try {
       const player = createNotePlayback(metronomeNotes(prefs.bpm), {
         duration: (16 * 60) / prefs.bpm,
+        rate: prefs.speed,
         loop: true,
         onStop: () => setPlaying(false),
         onError: showError,
       });
+      player.tempo = {
+        original: false,
+        renderedSpeed: prefs.bpm / prefs.baseBpm,
+      };
       audio.current = player;
       await player.ready;
       if (player.state !== "closed") setPlaying(true);
@@ -967,8 +1001,8 @@ export default function Transcription({
           </div>
           <p className="transcription-limit">
             Original tempo is a timing guide, initially 100 BPM; set it to your
-            recording’s tempo. Practice tempo and speed change note timing
-            together. Grand piano samples by{" "}
+            recording’s tempo. Practice tempo and speed update playback
+            immediately and change note timing together. Grand piano samples by{" "}
             <a href="https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html">
               Alexander Holm
             </a>{" "}

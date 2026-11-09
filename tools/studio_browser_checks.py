@@ -7,6 +7,30 @@ def check_studio(page, media_dir=None):
     expect(panel.locator('.note-block')).to_have_count(12)
     expect(panel.get_by_label('Playback instrument')).to_contain_text('Grand piano')
     page.wait_for_function("!document.querySelector('[aria-label=\"Playback instrument\"]').textContent.includes('loading')")
+    # Reproduce changing tempo on Try chord example without pressing Stop/Play.
+    panel.get_by_label('Loop practice section').check()
+    panel.get_by_role('button',name='Play detected notes',exact=True).click()
+    page.wait_for_function('cadenceAudio.at(-1)?.currentTime > .05 && !cadenceAudio.at(-1).paused')
+    player_count=page.evaluate('cadenceAudio.length')
+    selected_duration=float(panel.get_by_label('Loop end',exact=True).input_value())
+    panel.get_by_label('Practice tempo').fill('50')
+    assert page.evaluate('cadenceAudio.length')==player_count
+    assert page.evaluate('!cadenceAudio.at(-1).paused && cadenceAudio.at(-1).playbackRate === .5')
+    before=page.evaluate('cadenceAudio.at(-1).currentTime')
+    page.wait_for_timeout(500)
+    elapsed=page.evaluate('cadenceAudio.at(-1).currentTime')-before
+    assert .12 < elapsed < .4, elapsed
+    panel.get_by_label('Practice tempo').fill('200')
+    assert page.evaluate('!cadenceAudio.at(-1).paused && cadenceAudio.at(-1).playbackRate === 2')
+    panel.get_by_role('button',name='Stop notes',exact=True).click()
+    panel.get_by_role('button',name='Play detected notes',exact=True).click()
+    page.wait_for_function('cadenceAudio.at(-1)?.duration > 0 && !cadenceAudio.at(-1).paused')
+    # Fresh playback renders at the selected tempo, with no accidental second scaling.
+    assert abs(page.evaluate('cadenceAudio.at(-1).duration')-selected_duration/2)<.005
+    assert page.evaluate('cadenceAudio.at(-1).playbackRate')==1
+    panel.get_by_role('button',name='Stop notes',exact=True).click()
+    panel.get_by_label('Practice tempo').fill('100')
+    panel.get_by_label('Loop practice section').uncheck()
     panel.locator('.note-block').first.click()
     panel.get_by_label('Detected note pitch').fill('61')
     panel.get_by_role('button',name='Apply correction',exact=True).click()
