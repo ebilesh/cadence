@@ -1,7 +1,7 @@
 # Checks and limits
 
-The score-follower revision passed 42 backend tests with two private-recording
-skips on Python 3.12, 17 frontend tests, and the production build. The browser
+The score-follower revision passed 52 backend tests with two private-recording
+skips on Python 3.12, 19 frontend tests, and the production build. The browser
 suite exercised synthetic MIDI and microphone streams, cleanup, reference upload,
 page reload, and an actual backend process restart. Synthetic inputs do not
 establish accuracy on physical hardware. Additional regressions cover device
@@ -24,3 +24,13 @@ The quick demo includes saved output from Python analysis. Its snapshot is check
 I tested two phone recordings of a piano. The clean take improved from 40 detections and 8 extras to 32 detections and no extras. The mistaken take improved from 37 detections and 6 extras to 32 detections and 1 extra. Both now show estimated scores. These recordings stay local; they are not included in the repository.
 
 The overlap and onset filters are heuristics. Fast repetitions can merge, quiet attacks can disappear, and resonance can still confuse pitch tracking. Partial takes can align badly. Scores do not measure musical expression.
+
+
+AI transcription checks run the bundled pretrained model rather than replacing
+it with fake predictions. The included synthesized recording has 12 expected
+notes, all detected at the expected pitches and within 60 ms of their onsets.
+API checks cover malformed, silent, short/long audio, competing requests, model
+failures, temporary-file cleanup, and worker lifetime after cancellation. Browser
+checks upload the real sample, correct a pitch, export MIDI, and parse the file
+with an independent MIDI reader. This does not demonstrate general real-piano
+accuracy; physical recordings still need broader validation.

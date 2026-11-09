@@ -240,3 +240,29 @@ async def reference_upload(reference: UploadFile = File(...)):
         ) from error
     finally:
         await reference.close()
+
+
+@app.post('/api/transcribe')
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """Transcribe one recording locally; temporary audio is never retained."""
+    from transcription import transcribe, TRANSCRIPTION_LOCK
+    if not TRANSCRIPTION_LOCK.acquire(blocking=False):
+        await audio.close()
+        raise HTTPException(status_code=429, detail='Another transcription is running. Wait for it to finish and try again.', headers={'Retry-After': '5'})
+    try:
+        with tempfile.TemporaryDirectory() as folder:
+            path = await save_upload(audio, Path(folder), {'.wav', '.flac', '.ogg'})
+            task = asyncio.create_task(asyncio.to_thread(transcribe, path))
+            try:
+                return await asyncio.shield(task)
+            except asyncio.CancelledError:
+                # Keep the lock and file alive until the worker actually exits.
+                await task
+                raise
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except (OSError, RuntimeError, ImportError) as error:
+        raise HTTPException(status_code=503, detail='The transcription model could not run. Check the server installation and model file.') from error
+    finally:
+        TRANSCRIPTION_LOCK.release()
+        await audio.close()

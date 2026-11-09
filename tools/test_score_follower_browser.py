@@ -137,9 +137,28 @@ def run():
                     panel.scroll_into_view_if_needed()
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), label
                     page.screenshot(path=str(Path(tempfile.gettempdir()) / f'cadence-follower-{label}.png'), full_page=True)
+                transcription = page.locator('.transcription')
+                transcription.get_by_label('Upload piano recording').set_input_files(str(ROOT / 'samples/chords.wav'))
+                expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes', timeout=30000)
+                transcription.locator('svg rect').first.click()
+                transcription.get_by_label('Detected note pitch').fill('61')
+                transcription.get_by_role('button', name='Apply correction', exact=True).click()
+                expect(transcription.locator('svg rect').first).to_have_attribute('aria-label', 'Edit note 1: C♯4, 0.01 seconds')
+                with page.expect_download() as download:
+                    transcription.get_by_role('button', name='Export MIDI', exact=True).click()
+                with tempfile.TemporaryDirectory() as folder:
+                    midi_path = Path(folder) / 'edited.mid'
+                    download.value.save_as(midi_path)
+                    subprocess.run([PYTHON, '-c', "import pretty_midi,sys; n=pretty_midi.PrettyMIDI(sys.argv[1]).instruments[0].notes; assert len(n)==12; assert any(x.pitch==61 for x in n)", str(midi_path)],check=True,capture_output=True,text=True)
+                transcription.get_by_role('button', name='Delete note', exact=True).click()
+                expect(transcription.locator('.transcription-result')).to_contain_text('11 estimated notes')
+                transcription.get_by_role('button', name='Add missing note', exact=True).click()
+                expect(transcription.locator('.transcription-result')).to_contain_text('12 estimated notes')
+                transcription.get_by_role('button', name='Undo all edits', exact=True).click()
+                expect(transcription.locator('svg rect').first).to_have_attribute('aria-label', 'Edit note 1: C4, 0.01 seconds')
                 assert not errors, errors
                 browser.close()
-                print('PASS: replay, pause, reload, backend restart, completion recovery, live MIDI, synthetic microphone, stream cleanup, reference upload, desktop/mobile layout')
+                print('PASS: replay, pause, reload, backend restart, completion recovery, live MIDI, synthetic microphone, stream cleanup, reference upload, piano transcription, note correction, MIDI roundtrip, desktop/mobile layout')
         except Exception:
             logs.seek(0)
             print(logs.read(), file=sys.stderr)

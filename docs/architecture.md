@@ -58,3 +58,32 @@ The report's per-bar counts determine the exercises. Bars are ordered by flagged
 `demo_server.py` uses only Python's standard library to serve the committed build and `demo/report.json`. It returns a clear error for real upload requests. `tools/update_demo.py` copies the current frontend build and Python report into that folder. This keeps the two-minute presentation path separate from scientific dependency installation.
 
 Extra-note bar lookup chooses the closest occupied reference-note span by aligned time, including note durations and excluding empty bars. Equal distances favor the earlier bar. The alignment and tempo-fit functions are unchanged.
+
+
+## Recorded piano transcription
+
+`backend/transcription.py` validates mono/stereo WAV, FLAC and OGG before decoding,
+limits duration to 60 seconds, resamples to 22.05 kHz, and runs the bundled Basic
+Pitch ONNX model on CPU. Windows overlap by 30 output frames; their edges are
+trimmed before note decoding. The adapted upstream decoder emits multiple pitches
+per attack, without requiring a reference. A single worker lock returns HTTP 429
+for competing transcription requests. Request cancellation retains that lock and
+the temporary audio until the worker actually finishes; uploads are then deleted.
+
+The 230 KB ONNX model was extracted from the official Basic Pitch 0.4.0 PyPI wheel
+with its SHA-256 verified. The model hash is checked before the cached ONNX session
+is created. No TensorFlow installation, runtime model download, or external AI API
+is used. Upstream license and notice files are retained alongside the minimal
+adapted decoder. ONNX Runtime telemetry is disabled.
+
+`frontend/src/Transcription.jsx` provides audio upload, note selection, corrections,
+addition/deletion, local synthesized playback, and local MIDI export. The MIDI
+writer uses 480 ticks/beat at 120 BPM to preserve the estimated seconds, not to
+claim a detected musical tempo. The public build uses a disclosed saved model
+result; it hides transcription uploads. Edits are intentionally transient and
+must be exported before leaving the tab.
+
+This path is separate from the practice-report audio tracker and the live
+microphone follower, both of which remain monophonic. Synthetic chord regression
+checks are reproducible but do not establish real-piano accuracy. Acoustic piano,
+pedal, noisy rooms, and dense passages require a labeled recording benchmark.

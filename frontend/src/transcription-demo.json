@@ -1,0 +1,82 @@
+{
+  "model": "Spotify Basic Pitch 0.4.0 (ONNX)",
+  "duration": 3.25,
+  "notes": [
+    {
+      "pitch": 60,
+      "start": 0.0116,
+      "duration": 0.3947,
+      "activation": 0.5068
+    },
+    {
+      "pitch": 64,
+      "start": 0.0116,
+      "duration": 0.4063,
+      "activation": 0.62
+    },
+    {
+      "pitch": 67,
+      "start": 0.0116,
+      "duration": 0.418,
+      "activation": 0.6181
+    },
+    {
+      "pitch": 60,
+      "start": 0.5921,
+      "duration": 0.418,
+      "activation": 0.5007
+    },
+    {
+      "pitch": 64,
+      "start": 0.5921,
+      "duration": 0.4412,
+      "activation": 0.5923
+    },
+    {
+      "pitch": 67,
+      "start": 0.5921,
+      "duration": 0.4412,
+      "activation": 0.6175
+    },
+    {
+      "pitch": 60,
+      "start": 1.1958,
+      "duration": 0.418,
+      "activation": 0.5034
+    },
+    {
+      "pitch": 64,
+      "start": 1.1958,
+      "duration": 0.4412,
+      "activation": 0.5943
+    },
+    {
+      "pitch": 67,
+      "start": 1.1958,
+      "duration": 0.4412,
+      "activation": 0.6103
+    },
+    {
+      "pitch": 60,
+      "start": 1.7995,
+      "duration": 0.4076,
+      "activation": 0.4873
+    },
+    {
+      "pitch": 64,
+      "start": 1.7995,
+      "duration": 0.4309,
+      "activation": 0.5905
+    },
+    {
+      "pitch": 67,
+      "start": 1.7995,
+      "duration": 0.4309,
+      "activation": 0.6131
+    }
+  ],
+  "warnings": [
+    "AI estimates may miss notes or add harmonics. Check and edit the result before using it.",
+    "Pedal, overlapping instruments, noise, and dense chords can reduce accuracy."
+  ]
+}
