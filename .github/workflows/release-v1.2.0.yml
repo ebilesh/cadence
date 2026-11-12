@@ -1,0 +1,72 @@
+name: Publish v1.2.0 release
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/release-v1.2.0.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-v1.2.0
+  cancel-in-progress: false
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r backend/requirements.txt
+      - run: python -m pytest backend -q
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run build:demo
+
+  follower-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: pip install -r backend/requirements.txt -r tools/requirements-browser.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: npm ci
+        working-directory: frontend
+      - run: python tools/test_score_follower_browser.py
+      - run: npm run build:demo
+        working-directory: frontend
+      - run: python tools/test_public_demo_browser.py
+
+  publish:
+    needs: [backend, frontend, follower-browser]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create v1.2.0 --target "$GITHUB_SHA" --title "Cadence v1.2.0" --notes-file RELEASE_NOTES.md
