@@ -469,6 +469,32 @@ function App() {
             </span>
           </div>
           <div className="header-actions">
+            {DEMO_ONLY && (
+              <details className="demo-status">
+                <summary aria-label="Demo: what's included and missing">
+                  <span>Demo</span>
+                  <CircleHelp size={16} aria-hidden="true" />
+                </summary>
+                <div className="demo-status-content">
+                  <h2>About this demo</h2>
+                  <p>
+                    <strong>Included:</strong> the saved chord transcription and
+                    practice report, note editing, playback, loops, MIDI export,
+                    and sessions saved in this browser. You can also try live MIDI
+                    and single-note microphone following with the example score.
+                  </p>
+                  <p>
+                    <strong>Full app required:</strong> transcribing new uploads
+                    or microphone recordings, loading your own reference MIDI,
+                    and analyzing your own performance. This site uses saved
+                    analysis and does not run the transcription model.
+                  </p>
+                  <a href="https://github.com/ebilesh/cadence#run-real-analysis">
+                    Run the full app locally
+                  </a>
+                </div>
+              </details>
+            )}
             <button
               className="text-button"
               onClick={() => setInfo(!info)}

@@ -59,6 +59,13 @@ def run(site_dir, capture):
                                 ('Cadence', 'https://cadence.heyabhilash.com/')]:
                 expect(footer.get_by_role('link', name=label, exact=True)).to_have_attribute('href', href)
             expect(credit).to_contain_text(f"v{build['version']} · {build['revision']}")
+            demo_info = page.locator('.demo-status')
+            expect(demo_info.locator('.demo-status-content')).to_be_hidden()
+            demo_info.locator('summary').click()
+            expect(demo_info.get_by_role('heading', name='About this demo')).to_be_visible()
+            expect(demo_info).to_contain_text('Full app required:')
+            expect(demo_info.get_by_role('link', name='Run the full app locally')).to_have_attribute('href', 'https://github.com/ebilesh/cadence#run-real-analysis')
+            demo_info.locator('summary').click()
             frames = []
             if capture:
                 cdp = context.new_cdp_session(page)
@@ -160,6 +167,11 @@ def run(site_dir, capture):
             phone_credit = phone_page.locator('footer .build-credit')
             expect(phone_credit).to_be_visible()
             expect(phone_credit).to_contain_text(f"v{build['version']} · {build['revision']}")
+            phone_info = phone_page.locator('.demo-status')
+            phone_info.locator('summary').tap()
+            expect(phone_info.get_by_role('heading', name='About this demo')).to_be_visible()
+            assert phone_page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            phone_info.locator('summary').tap()
             phone_panel=phone_page.locator('.transcription')
             phone_panel.get_by_role('button',name='Try chord example',exact=True).tap()
             phone_panel.get_by_role('button',name='Play detected notes',exact=True).tap()
