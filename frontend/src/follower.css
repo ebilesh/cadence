@@ -16,7 +16,7 @@
 }
 .follower-heading h2 {
   margin: 0;
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
   font-size: 22px;
   letter-spacing: -0.025em;
 }

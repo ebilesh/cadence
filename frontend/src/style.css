@@ -1,5 +1,6 @@
+:root{--font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--weight-body:400;--weight-label:600;--weight-heading:750;}
 :root {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui);
   color: #24313d;
   background: #f8f9fa;
   font-synthesis: none;
@@ -60,7 +61,7 @@ a {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -1.7px;
@@ -195,7 +196,7 @@ header {
   color: #6f8e80;
 }
 h1 {
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
   font-size: 34px;
   letter-spacing: -1.3px;
   margin: 9px 0 10px;
@@ -272,7 +273,7 @@ h1 {
   font-size: 20px;
 }
 .session-copy h2 {
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
   font-size: 19px;
   letter-spacing: -0.5px;
   margin: 8px 0 7px;
@@ -361,7 +362,7 @@ h1 {
   color: #7b8b83;
 }
 .metric > div:not(.meter) {
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
   font-size: 35px;
   letter-spacing: -1.5px;
   font-weight: 700;
@@ -643,7 +644,7 @@ h3 {
 .step-number {
   font-size: 10px;
   color: #91a489;
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
 }
 .recommendations h4 {
   font-size: 11px;
@@ -1364,7 +1365,7 @@ td {
   width: 100%;
   height: 40vh;
   resize: vertical;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   padding: 12px;
   background: #fff;
@@ -1399,7 +1400,7 @@ html[data-theme="dark"] .tabs span {
   text-align: center;
 }
 .count-strip strong {
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-ui);
   font-size: 22px;
 }
 .count-strip span {

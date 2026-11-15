@@ -324,3 +324,10 @@ html[data-theme="dark"] .studio-shell .nav-item.active { color: #74c0fc; backgro
   .studio-shell .breadcrumb { min-width: 0; }
   .studio-shell .header-actions { gap: 6px; flex-shrink: 0; }
 }
+
+/* Portfolio typography: the application uses the same family and weight roles. */
+.studio-shell .brand { font-weight: var(--weight-heading); }
+.studio-shell .page-heading h1 { font-weight: var(--weight-heading); line-height: 1.15; }
+.studio-shell h2,.studio-shell h3 { font-weight: 700; }
+.studio-shell .button,.studio-shell .nav-item { font-weight: var(--weight-label); }
+.studio-shell p { line-height: 1.65; }

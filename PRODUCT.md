@@ -12,7 +12,7 @@ and saving easy to find. It is not a validated musical proficiency grader.
 The selected visual direction follows the portfolio: charcoal dark surfaces, cool
 light surfaces, and blue actions around a focused piano editor, transport, and
 session library. Keep musical feedback colors distinct and use
-self-hosted Manrope/DM Sans. Separate Piano studio, Live following, Practice
+the portfolio’s system sans typography. Separate Piano studio, Live following, Practice
 report, and Saved sessions instead of stacking every tool on one long page.
 
 The public static demo offers a real saved AI chord transcription and all local

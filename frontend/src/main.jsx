@@ -23,13 +23,6 @@ import {
   Headphones,
   AudioLines,
 } from "lucide-react";
-import "@fontsource/manrope/latin-600.css";
-import "@fontsource/manrope/latin-700.css";
-import "@fontsource/manrope/latin-800.css";
-import "@fontsource/dm-sans/latin-400.css";
-import "@fontsource/dm-sans/latin-500.css";
-import "@fontsource/dm-sans/latin-600.css";
-import "@fontsource/dm-sans/latin-700.css";
 import "./style.css";
 import "./studio-shell.css";
 import demo from "./demo.json";

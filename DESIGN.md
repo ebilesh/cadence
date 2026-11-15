@@ -25,12 +25,12 @@ colors:
   extra-note: "#9e805f"
 typography:
   headline:
-    fontFamily: "Manrope, sans-serif"
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' 
     fontSize: "34px"
-    fontWeight: 800
+    fontWeight: 750
     letterSpacing: "-1.3px"
   body:
-    fontFamily: '"DM Sans", sans-serif'
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' 
   title:
     fontSize: "13px"
     fontWeight: 700
@@ -38,7 +38,7 @@ typography:
     fontSize: "13px"
     lineHeight: 1.6
   score:
-    fontFamily: "Manrope, sans-serif"
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' 
     fontSize: "35px"
     fontWeight: 700
     letterSpacing: "-1.5px"
@@ -95,7 +95,7 @@ Green identifies actions, selected navigation, and successful notes. Neutral sur
 
 ## Typography
 
-Manrope gives headings and score values their compact weight. DM Sans carries controls, labels, and explanatory text. Both families are self-hosted from Fontsource so presentation does not depend on a font CDN. The headline reduces to 30px at the tablet breakpoint and 25px on small screens. Supporting report descriptions use the supporting role; individual dense chart labels remain smaller.
+The portfolio’s system sans stack carries headings, score values, controls, and explanatory text. It needs no font download and uses the same platform-native face as the portfolio. The headline reduces to 30px at the tablet breakpoint and 25px on small screens. Supporting report descriptions use the supporting role; individual dense chart labels remain smaller.
 
 **The Readable Report Rule.** Keep explanations readable and direct. Use plain descriptions of measured pitch and timing, and retain uncertainty labels for audio estimates.
 
@@ -151,3 +151,15 @@ encode success, timing, faults, or musical feedback. Prefer flat workspaces,
 compact empty states, direct labels, and visible controls over decorative welcome
 cards and repeated introductory slogans. This direction supersedes the green
 chrome guidance above; domain-specific status colors remain unchanged.
+
+## Shared portfolio typography
+
+The portfolio is the type reference. Interface and reading text use
+`-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif` with no downloaded
+display or body fonts. Use 400 for body text, 600 for controls and labels, 700
+for section headings, and 750 for page titles and wordmarks. Titles use tight
+tracking around -0.035em; prose remains at 1.65 line height and 45–75ch measure.
+App controls retain their denser role sizes; mobile text inputs remain 16px.
+Monospace is reserved for code, identifiers, expressions, and measured data.
+Music engraving and mathematical notation retain their domain fonts.
+This supersedes the earlier Manrope/DM Sans family guidance.

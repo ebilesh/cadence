@@ -49,3 +49,18 @@ jobs:
       - run: npm run build:demo
         working-directory: frontend
       - run: python tools/test_public_demo_browser.py
+      - run: python tools/refresh_screenshots.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cadence-ui-screenshots
+          retention-days: 14
+          path: |
+            docs/laptop-light.png
+            docs/laptop-dark.png
+            docs/phone-light.png
+            docs/phone-dark.png
+            docs/preview.jpg
+            docs/submission-preview.png
+            docs/transcription.png
+            docs/sheet-music.png
+
