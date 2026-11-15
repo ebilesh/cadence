@@ -694,7 +694,7 @@ export default function Transcription({
               />
             </label>
           )}
-          <button className="button secondary" onClick={sample} disabled={busy}>
+          <button className={`button ${demoOnly ? "primary" : "secondary"}`} onClick={sample} disabled={busy}>
             Try chord example
           </button>
         </div>
