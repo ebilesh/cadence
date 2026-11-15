@@ -1,11 +1,11 @@
 :root {
   font-family: "DM Sans", sans-serif;
-  color: #243535;
+  color: #24313d;
   background: #f8f9fa;
   font-synthesis: none;
-  --green: #207565;
+  --green: #1864ab;
   --muted: #83908f;
-  --border: #e6ebea;
+  --border: #d8dfe6;
 }
 * {
   box-sizing: border-box;
@@ -32,7 +32,7 @@ button:disabled {
 button:focus-visible,
 a:focus-visible,
 label:focus-within {
-  outline: 3px solid #8ebdaf;
+  outline: 3px solid #74c0fc;
   outline-offset: 3px;
 }
 button {
@@ -66,7 +66,7 @@ a {
   letter-spacing: -1.7px;
 }
 .brand-icon {
-  background: #eaf3ee;
+  background: #e7f2fc;
   border-radius: 11px;
   color: var(--green);
   width: 37px;
@@ -99,7 +99,7 @@ a {
 }
 .nav-item.active {
   color: var(--green);
-  background: #edf5f0;
+  background: #e7f2fc;
   font-weight: 700;
 }
 .sidebar-bottom {
@@ -232,11 +232,11 @@ h1 {
   color: #fff;
 }
 .primary {
-  background: #267861;
+  background: #1864ab;
   color: #fff;
 }
 .primary:hover {
-  background: #1b614c;
+  background: #15558f;
 }
 .full {
   width: 100%;
@@ -1375,7 +1375,7 @@ td {
 }
 html[data-theme="dark"] .report-dialog,
 html[data-theme="dark"] .report-dialog textarea {
-  background: #1c2b22;
+  background: #292f35;
   color: #d5e4d8;
 }
 html[data-theme="dark"] .tabs span {
@@ -1606,22 +1606,22 @@ html[data-theme="dark"] .tabs span {
 }
 html[data-theme="dark"] {
   color-scheme: dark;
-  --border: #35483d;
-  --green: #8fc9aa;
-  color: #e2ece4;
-  background: #132019;
+  --border: #495057;
+  --green: #74c0fc;
+  color: #f1f3f5;
+  background: #212529;
 }
 html[data-theme="dark"] body {
-  color: #e2ece4;
-  background: #132019;
+  color: #f1f3f5;
+  background: #212529;
 }
 html[data-theme="dark"] .sidebar,
 html[data-theme="dark"] .card,
 html[data-theme="dark"] .metric,
 html[data-theme="dark"] .count-strip,
 html[data-theme="dark"] .secondary {
-  background: #1c2b22;
-  color: #e2ece4;
+  background: #292f35;
+  color: #f1f3f5;
   border-color: var(--border);
 }
 html[data-theme="dark"] .brand-icon,
@@ -1629,19 +1629,19 @@ html[data-theme="dark"] .nav-item.active,
 html[data-theme="dark"] .main-score,
 html[data-theme="dark"] .notice,
 html[data-theme="dark"] .loading-state {
-  background: #243c2d;
-  color: #c9e6d1;
+  background: #243f56;
+  color: #d0ebff;
   border-color: #365340;
 }
 html[data-theme="dark"] .session-banner,
 html[data-theme="dark"] .coach-card {
-  background: #213528;
+  background: #292f35;
   border-color: #354d3b;
 }
 html[data-theme="dark"] .session-art,
 html[data-theme="dark"] .practice-icon,
 html[data-theme="dark"] .connection-icon {
-  background: #314d38;
+  background: #343c44;
   color: #b1d6bb;
 }
 html[data-theme="dark"] .demo-card {
@@ -1650,16 +1650,16 @@ html[data-theme="dark"] .demo-card {
 }
 html[data-theme="dark"] .input-switch,
 html[data-theme="dark"] th {
-  background: #17241b;
+  background: #242a30;
 }
 html[data-theme="dark"] .input-switch .selected,
 html[data-theme="dark"] .dropzone {
-  background: #25372b;
-  border-color: #46604c;
+  background: #343c44;
+  border-color: #607487;
   color: #b2c7b5;
 }
 html[data-theme="dark"] .dropzone:hover {
-  background: #304837;
+  background: #3b4854;
 }
 html[data-theme="dark"] .roll-grid {
   background: repeating-linear-gradient(
@@ -1722,7 +1722,7 @@ html[data-theme="dark"] .tabs button,
 html[data-theme="dark"] .text-button,
 html[data-theme="dark"] .dropzone strong,
 html[data-theme="dark"] .field-label span {
-  color: #bdcdbf;
+  color: #ced4da;
 }
 html[data-theme="dark"] .tabs .selected {
   color: #b3e4c0;
@@ -1748,7 +1748,7 @@ html[data-theme="dark"] .eyebrow,
 html[data-theme="dark"] .sidebar-bottom p,
 html[data-theme="dark"] .feedback-label,
 html[data-theme="dark"] .empty-state p {
-  color: #acbfae;
+  color: #aeb8c1;
 }
 @media (max-width: 960px) {
   .metrics {
@@ -1877,7 +1877,7 @@ html[data-theme="dark"] .demo-card p {
 
 /* Report refinements: keep the established green palette and note graphics. */
 ::selection { background: #b8dbcd; color: #142c24; }
-:root { --muted: #586c65; }
+:root { --muted: #526170; }
 .brand { letter-spacing: -0.035em; }
 .session-label { font-size: 12px; color: var(--green); margin-bottom: 8px; }
 .session-art, .demo-wave, .step-number { display: none; }
@@ -1888,7 +1888,7 @@ input, textarea { caret-color: var(--green); }
 .score-value, td, .metric-value { font-variant-numeric: tabular-nums; }
 .skip-link { position: fixed; top: -80px; left: 16px; z-index: 100; background: #fff; color: #142c24; padding: 12px 18px; border: 2px solid var(--green); }
 .skip-link:focus { top: 12px; }
-html[data-theme="dark"] .session-label { color: #b1d8c1; }
+html[data-theme="dark"] .session-label { color: #a5d8ff; }
 @media (max-width: 700px) { .upload-column { order: -1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
 html:not([data-theme="dark"]) .card-heading p,
@@ -1909,8 +1909,9 @@ html:not([data-theme="dark"]) .demo-card p,
 html:not([data-theme="dark"]) .breadcrumb span,
 html:not([data-theme="dark"]) .nav-item,
 html:not([data-theme="dark"]) .field-label,
-html:not([data-theme="dark"]) footer { color: #4f655b; }
+html:not([data-theme="dark"]) footer { color: #526170; }
 .card-heading p, .coach-heading p, .recommendations p, .timeline-footer { font-size: 13px; }
 html:not([data-theme="dark"]) .cool { color: #315d48; }
 html:not([data-theme="dark"]) .warm,
 html:not([data-theme="dark"]) .mild { color: #76501d; }
+

@@ -9,8 +9,9 @@ The core audience is a pianist practicing at a computer or phone. The interface
 must explain AI uncertainty in plain language and keep playback/stop, editing,
 and saving easy to find. It is not a validated musical proficiency grader.
 
-The selected visual direction is a green piano studio: focused editor, transport
-controls, and a session library. Preserve the green light/dark identity and use
+The selected visual direction follows the portfolio: charcoal dark surfaces, cool
+light surfaces, and blue actions around a focused piano editor, transport, and
+session library. Keep musical feedback colors distinct and use
 self-hosted Manrope/DM Sans. Separate Piano studio, Live following, Practice
 report, and Saved sessions instead of stacking every tool on one long page.
 
@@ -24,3 +25,4 @@ Saved sessions and original recordings remain in this browser's IndexedDB and do
 not sync between devices. Saving a named studio session enables autosave for its
 edits and practice settings. Reports are saved explicitly. Notation is an eighth-
 note quantized 4/4 practice view at the user-selected tempo, not verified engraving.
+

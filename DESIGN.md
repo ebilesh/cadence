@@ -139,3 +139,15 @@ The report workspace retains scores, timeline, piano overlay, bar heatmap, note 
 - Do use clear report copy and visible keyboard focus.
 - Don't add decorative model-oriented imagery or unsupported claims about musical ability.
 - Don't use color alone to communicate note errors.
+
+
+## Portfolio alignment, November 2026
+
+The current portfolio is the visual reference: charcoal #212529, raised surface
+#292f35, heading #f1f3f5, body #ced4da, muted text #aeb8c1, border #495057,
+and blue #74c0fc. Light mode uses cool neutral surfaces and blue #1864ab.
+Blue identifies navigation and actions. Preserve green, amber, and red where they
+encode success, timing, faults, or musical feedback. Prefer flat workspaces,
+compact empty states, direct labels, and visible controls over decorative welcome
+cards and repeated introductory slogans. This direction supersedes the green
+chrome guidance above; domain-specific status colors remain unchanged.

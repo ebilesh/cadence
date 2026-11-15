@@ -1,10 +1,10 @@
 .studio-shell {
-  --studio-bg: #f5f6f2;
+  --studio-bg: #f8f9fa;
   --studio-surface: #fff;
-  --studio-ink: #243535;
-  --studio-soft: #eef3ee;
-  --studio-muted: #52675d;
-  --studio-line: #dfe5df;
+  --studio-ink: #24313d;
+  --studio-soft: #edf1f5;
+  --studio-muted: #526170;
+  --studio-line: #cbd3db;
   background: var(--studio-bg);
   color: var(--studio-ink);
 }
@@ -84,23 +84,23 @@
 }
 .studio-shell input:focus-visible,
 .studio-shell select:focus-visible {
-  outline: 3px solid #8ebdaf;
+  outline: 3px solid #74c0fc;
   outline-offset: 2px;
 }
 .studio-shell ::selection {
-  background: #c8dfcf;
-  color: #193c2d;
+  background: #b8dcfa;
+  color: #14202b;
 }
 .studio-shell input {
   accent-color: var(--green);
 }
 [data-theme="dark"] .studio-shell {
-  --studio-bg: #132019;
-  --studio-surface: #1c2b22;
-  --studio-ink: #e2ece4;
-  --studio-soft: #263e30;
-  --studio-muted: #acbfae;
-  --studio-line: #35483d;
+  --studio-bg: #212529;
+  --studio-surface: #292f35;
+  --studio-ink: #f1f3f5;
+  --studio-soft: #343c44;
+  --studio-muted: #aeb8c1;
+  --studio-line: #495057;
 }
 @media (max-width: 1000px) {
   .studio-shell .sidebar {
@@ -235,4 +235,30 @@
   .studio-shell .footer-brand {
     display: none;
   }
+}
+
+
+/* Match the portfolio chrome; reserve green and amber for musical feedback. */
+html[data-theme="dark"] .studio-shell .button.secondary {
+  background: var(--studio-surface); color: var(--studio-ink); border-color: var(--studio-line);
+}
+.studio-shell .button.primary { background: #1864ab; color: #fff; }
+html[data-theme="dark"] .studio-shell .button.primary { background: #74c0fc; color: #14202b; }
+.studio-shell .button:hover { transform: none; }
+.studio-shell .brand-icon,.studio-shell .nav-item.active { color: #1864ab; background: #e7f2fc; }
+html[data-theme="dark"] .studio-shell .brand-icon,
+html[data-theme="dark"] .studio-shell .nav-item.active { color: #74c0fc; background: #243f56; }
+.studio-shell .studio-intro { padding-top: 18px; }
+.studio-shell .studio-intro h2 { font-size: 18px; }
+.studio-shell .studio-empty {
+  min-height: 0; padding: 24px 0; background: transparent; border: 0;
+  border-top: 1px solid var(--studio-line); border-radius: 0;
+  align-items: flex-start; text-align: left;
+}
+.studio-shell .studio-empty h3 { font-size: 18px; }
+.studio-shell .studio-empty p { margin-bottom: 0; max-width: 65ch; }
+.studio-shell .studio-disclosure { max-width: 75ch; }
+@media(max-width:700px) {
+  .studio-shell .studio-nav .nav-item { flex-direction: column; gap: 5px; padding: 6px; }
+  .studio-shell .studio-nav span { display: block; font-size: 10px; }
 }

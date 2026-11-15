@@ -109,6 +109,7 @@ function App() {
     );
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#212529" : "#f8f9fa");
     localStorage.setItem("cadence-theme", theme);
   }, [theme]);
   const audioCtx = useRef(null),
@@ -495,19 +496,19 @@ function App() {
               {workspace === "studio"
                 ? "Piano studio"
                 : workspace === "follow"
-                  ? "Stay with the score"
+                  ? "Live following"
                   : workspace === "library"
                     ? "Saved sessions"
                     : "Practice report"}
             </h1>
             <p>
               {workspace === "studio"
-                ? "Listen. Make it yours. Play it again."
+                ? "Edit piano notes, compare playback, and practice a loop."
                 : workspace === "follow"
-                  ? "A place in the music, one attack at a time."
+                  ? "Follow a MIDI score while you play."
                   : workspace === "library"
-                    ? "Pick up where you left off."
-                    : "Find the passages worth another take."}
+                    ? "Open a session saved in this browser."
+                    : "Compare pitch and timing with a MIDI reference."}
             </p>
           </div>
           <div className="page-heading-actions" hidden={workspace !== "report"}>
@@ -887,10 +888,11 @@ function App() {
           <div className="footer-credits">
             <BuildCredit />
           </div>
-          <span>Your piano. Your pace.</span>
+          <span>Piano transcription and practice</span>
         </footer>
       </main>
     </div>
   );
 }
 createRoot(document.getElementById("root")).render(<App />);
+

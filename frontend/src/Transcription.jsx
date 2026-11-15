@@ -675,10 +675,9 @@ export default function Transcription({
     >
       <div className="studio-intro">
         <div>
-          <h2 id="transcription-title">Your playing, in focus.</h2>
+          <h2 id="transcription-title">Piano recording</h2>
           <p>
-            Turn a piano take into notes. Listen closely, make corrections, and
-            practice the parts that matter.
+            Open a recording or example to edit the detected notes.
           </p>
         </div>
         <div className="studio-import">
@@ -702,8 +701,8 @@ export default function Transcription({
       </div>
       {demoOnly ? (
         <p className="studio-disclosure">
-          Explore a real AI transcription of synthesized piano. New uploads and
-          microphone transcription need the full app.
+          This demo includes a saved chord transcription. Uploading and transcribing
+          new recordings requires the full app.
         </p>
       ) : (
         <>
@@ -774,24 +773,12 @@ export default function Transcription({
       )}
       {!result ? (
         <div className="studio-empty">
-          <Music2 size={42} />
-          <h3>Start with a little piano.</h3>
+          <h3>No recording open</h3>
           <p>
-            Bring a short recording, or open the chord example to explore the
-            editor. Every note is yours to adjust.
+            {demoOnly
+              ? "Choose Try chord example to open the note editor. You can play, change, and save the notes in this browser."
+              : "Upload a piano recording, record a take, or try the chord example."}
           </p>
-          <div className="empty-keys" aria-hidden="true">
-            {Array.from({ length: 14 }, (_, i) => (
-              <span
-                key={i}
-                className={
-                  [1, 2, 4, 5, 6, 8, 9, 11, 12, 13].includes(i)
-                    ? "black-key"
-                    : ""
-                }
-              />
-            ))}
-          </div>
         </div>
       ) : (
         <>
@@ -1309,3 +1296,4 @@ export default function Transcription({
     </section>
   );
 }
+

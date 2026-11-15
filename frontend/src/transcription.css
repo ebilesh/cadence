@@ -55,7 +55,7 @@
   cursor: pointer;
 }
 .transcription-upload:focus-within {
-  outline: 3px solid #8ebdaf;
+  outline: 3px solid #74c0fc;
   outline-offset: 3px;
 }
 .studio-empty {
@@ -107,7 +107,7 @@
   position: absolute;
   width: 65%;
   height: 62%;
-  background: #243535;
+  background: #24313d;
   right: -35%;
   top: 0;
   z-index: 1;
@@ -296,7 +296,7 @@
   opacity: 0.4;
 }
 .transcription-roll .note-block {
-  fill: #267861;
+  fill: #1864ab;
   cursor: grab;
   touch-action: none;
   rx: 2px;
@@ -544,3 +544,4 @@
   border-radius: 10px;
   margin: 18px 0;
 }
+
