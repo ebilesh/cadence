@@ -262,3 +262,35 @@ html[data-theme="dark"] .studio-shell .nav-item.active { color: #74c0fc; backgro
   .studio-shell .studio-nav .nav-item { flex-direction: column; gap: 5px; padding: 6px; }
   .studio-shell .studio-nav span { display: block; font-size: 10px; }
 }
+
+/* Shared site footer: ordinary document flow, never an overlay. */
+.network-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 4px 24px; min-height: 73px; width: 100%;
+  padding: 16px 0; border-top: 1px solid var(--network-border,#495057);
+  color: var(--network-muted,inherit); font-size: 13px; line-height: 1.5; font-family: inherit;
+}
+.network-footer .footer-author {
+  color: var(--network-ink,inherit); font-weight: 600;
+}
+.network-footer nav { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 20px; margin: 0; padding: 0; }
+.network-footer a { display: inline-flex; align-items: center; min-height: 40px; text-decoration: none; color: inherit; font-size: 13px; }
+.network-footer a:hover { color: var(--network-accent,#74c0fc); text-decoration: underline; text-underline-offset: .22em; }
+.network-footer a[aria-current="page"] { color: var(--network-accent,#74c0fc); }
+.network-footer a:focus-visible { outline: 2px solid var(--network-accent,#74c0fc); outline-offset: 4px; border-radius: 2px; }
+.network-footer .footer-theme-credit { flex-basis: 100%; font-size: 12px; }
+@media(max-width:600px) {
+  .network-footer { align-items: flex-start; gap: 0 20px; padding-block: 12px; }
+  .network-footer .footer-author { flex-basis: 100%; }
+  .network-footer nav { gap: 4px 24px; }
+}
+
+.studio-shell main { display: flex; flex-direction: column; min-height: 100dvh; }
+.studio-shell .network-footer {
+  --network-border: var(--studio-line); --network-muted: var(--studio-muted);
+  --network-ink: var(--studio-ink); --network-accent: var(--green);
+  margin-top: auto; font-size: 13px;
+}
+.studio-shell .network-footer .footer-credits { flex-basis: 100%; }
+.studio-shell .network-footer .build-credit { margin: 0; padding: 0; border: 0; }
+@media(max-width:700px) { .studio-shell main { min-height: calc(100dvh - 66px); } }

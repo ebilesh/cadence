@@ -883,13 +883,7 @@ function App() {
             </aside>
           </div>
         </div>
-        <footer>
-          <span className="footer-brand">Cadence</span>
-          <div className="footer-credits">
-            <BuildCredit />
-          </div>
-          <span>Piano transcription and practice</span>
-        </footer>
+        <footer className="network-footer"><a className="footer-author" href="https://heyabhilash.com/">Abhilash Kalyan</a><nav aria-label="Site links"><a href="https://github.com/ebilesh">GitHub</a><a href="https://orbit.heyabhilash.com/">Orbit</a><a href="https://cadence.heyabhilash.com/" aria-current="page">Cadence</a></nav><div className="footer-credits"><BuildCredit /></div></footer>
       </main>
     </div>
   );
