@@ -50,7 +50,14 @@ def run(site_dir, capture):
             build = context.request.get(url + '/version.json').json()
             credit = page.locator('.sidebar .build-credit')
             expect(credit).to_be_visible()
-            expect(credit).to_contain_text('Made by Abhilash Kalyan · 2026')
+            footer = page.locator('footer.network-footer')
+            author = footer.get_by_role('link', name='Abhilash Kalyan', exact=True)
+            expect(author).to_be_visible()
+            expect(author).to_have_attribute('href', 'https://heyabhilash.com/')
+            for label, href in [('GitHub', 'https://github.com/ebilesh'),
+                                ('Orbit', 'https://orbit.heyabhilash.com/'),
+                                ('Cadence', 'https://cadence.heyabhilash.com/')]:
+                expect(footer.get_by_role('link', name=label, exact=True)).to_have_attribute('href', href)
             expect(credit).to_contain_text(f"v{build['version']} · {build['revision']}")
             frames = []
             if capture:
@@ -147,6 +154,9 @@ def run(site_dir, capture):
               window.Audio=function(...args){const audio=new OriginalAudio(...args);cadenceAudio.push(audio);return audio;};""")
             phone_page=phone.new_page()
             phone_page.goto(url)
+            phone_footer = phone_page.locator('footer.network-footer')
+            expect(phone_footer.get_by_role('link', name='Abhilash Kalyan', exact=True)).to_be_visible()
+            expect(phone_footer.get_by_role('navigation', name='Site links')).to_be_visible()
             phone_credit = phone_page.locator('footer .build-credit')
             expect(phone_credit).to_be_visible()
             expect(phone_credit).to_contain_text(f"v{build['version']} · {build['revision']}")
@@ -186,3 +196,4 @@ if __name__ == '__main__':
     parser.add_argument('--capture-media', action='store_true')
     args = parser.parse_args()
     run((ROOT / args.site_dir).resolve(), args.capture_media)
+
