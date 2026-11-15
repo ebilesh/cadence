@@ -1,6 +1,6 @@
 # Cadence
 
-[Open the live sample report](https://cadence-piano.cadence-deployment.workers.dev)
+[Open the live sample report](https://cadence.heyabhilash.com/)
 
 I built Cadence to turn piano recordings into editable notes and find the bars I should practice again. It can transcribe a recording without a reference, or compare a take with a MIDI reference. React shows the notes and reports; FastAPI runs local analysis. The app checks pitch and timing. It does not grade musical expression.
 
